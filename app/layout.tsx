@@ -11,6 +11,7 @@ const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
   subsets: ["latin"],
   weight: "400",
+  style: ["normal", "italic"],
 });
 
 const interTight = Inter_Tight({
@@ -33,7 +34,7 @@ export default function RootLayout({
       lang="en"
       className={`${manrope.variable} ${instrumentSerif.variable} ${interTight.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
+      <body className="min-h-full flex flex-col bg-background text-foreground font-body">
         {children}
       </body>
     </html>
