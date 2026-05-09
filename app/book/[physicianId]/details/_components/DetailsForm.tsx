@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { BookingActionState } from "@/lib/actions/bookings";
 
@@ -56,6 +56,15 @@ type Props = {
   ) => Promise<BookingActionState>;
 };
 
+type Fields = {
+  patientName: string;
+  dob: string;
+  email: string;
+  phone: string;
+  reason: string;
+  notes: string;
+};
+
 export default function DetailsForm({
   slotId,
   slotLabel,
@@ -69,6 +78,18 @@ export default function DetailsForm({
   const fe = state?.error === "validation" ? state.fieldErrors : undefined;
   const uid = useId();
   const id = (name: string) => `${uid}-${name}`;
+
+  const [fields, setFields] = useState<Fields>({
+    patientName: "",
+    dob: "",
+    email: "",
+    phone: "",
+    reason: "",
+    notes: "",
+  });
+
+  const set = (name: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setFields((f) => ({ ...f, [name]: e.target.value }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -99,12 +120,21 @@ export default function DetailsForm({
               type="text"
               placeholder="Jane Smith"
               autoComplete="name"
+              value={fields.patientName}
+              onChange={set("patientName")}
               className={input}
             />
           </Field>
 
           <Field id={id("dob")} label="Date of birth" error={fe?.dob?.[0]}>
-            <input id={id("dob")} name="dob" type="date" className={input} />
+            <input
+              id={id("dob")}
+              name="dob"
+              type="date"
+              value={fields.dob}
+              onChange={set("dob")}
+              className={input}
+            />
           </Field>
 
           <Field id={id("email")} label="Email" error={fe?.email?.[0]}>
@@ -114,6 +144,8 @@ export default function DetailsForm({
               type="email"
               placeholder="jane@example.com"
               autoComplete="email"
+              value={fields.email}
+              onChange={set("email")}
               className={input}
             />
           </Field>
@@ -123,8 +155,10 @@ export default function DetailsForm({
               id={id("phone")}
               name="phone"
               type="tel"
-              placeholder="+61 400 000 000"
+              placeholder="+1 (416) 555-0100"
               autoComplete="tel"
+              value={fields.phone}
+              onChange={set("phone")}
               className={input}
             />
           </Field>
@@ -140,6 +174,8 @@ export default function DetailsForm({
             name="reason"
             type="text"
             placeholder="Brief description of your concern"
+            value={fields.reason}
+            onChange={set("reason")}
             className={input}
           />
         </Field>
@@ -150,6 +186,8 @@ export default function DetailsForm({
             name="notes"
             rows={3}
             placeholder="Any relevant medical history or context for your physician"
+            value={fields.notes}
+            onChange={set("notes")}
             className={`${input} resize-none`}
           />
         </Field>
