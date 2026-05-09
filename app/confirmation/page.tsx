@@ -1,21 +1,23 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { bookings, timeSlots, physicians } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-export default async function ConfirmationPage(
-  props: PageProps<"/confirmation">
-) {
-  const sp = await props.searchParams;
-  const ref = (sp as Record<string, string>).ref;
+async function ConfirmationContent({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const sp = await searchParams;
+  const ref = sp.ref;
   if (!ref) notFound();
 
   const rows = await db
     .select({
       reference: bookings.reference,
       patientName: bookings.patientName,
-      status: bookings.status,
       startsAt: timeSlots.startsAt,
       physicianName: physicians.name,
       specialty: physicians.specialty,
@@ -32,7 +34,7 @@ export default async function ConfirmationPage(
   const apptDate = new Date(booking.startsAt);
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-16 pb-12">
+    <>
       <div className="w-12 h-12 rounded-full bg-brand/10 flex items-center justify-center mb-6">
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
           <path
@@ -110,6 +112,29 @@ export default async function ConfirmationPage(
       >
         Make another booking
       </Link>
+    </>
+  );
+}
+
+export default function ConfirmationPage(
+  props: PageProps<"/confirmation">
+) {
+  return (
+    <div className="max-w-lg mx-auto px-4 pt-16 pb-12">
+      <Suspense
+        fallback={
+          <div className="flex flex-col gap-4">
+            <div className="w-12 h-12 rounded-full bg-surface animate-pulse" />
+            <div className="h-8 w-48 rounded bg-surface animate-pulse mt-2" />
+            <div className="h-4 w-64 rounded bg-surface animate-pulse" />
+            <div className="rounded-xl border border-border bg-surface h-48 animate-pulse mt-4" />
+          </div>
+        }
+      >
+        <ConfirmationContent
+          searchParams={props.searchParams as Promise<Record<string, string>>}
+        />
+      </Suspense>
     </div>
   );
 }

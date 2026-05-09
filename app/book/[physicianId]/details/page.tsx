@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getPhysician } from "@/lib/actions/physicians";
 import BackLink from "@/app/_components/BackLink";
 import { createBooking } from "@/lib/actions/bookings";
@@ -8,15 +9,16 @@ import { db } from "@/lib/db";
 import { timeSlots } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-export default async function DetailsPage(
-  props: PageProps<"/book/[physicianId]/details">
-) {
-  const { physicianId } = await props.params;
-  const sp = await props.searchParams;
-  const params = sp as Record<string, string>;
-
-  const slotId = params.slotId;
-  const dateParam = params.date;
+async function DetailsContent({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ physicianId: string }>;
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const [{ physicianId }, sp] = await Promise.all([params, searchParams]);
+  const slotId = sp.slotId;
+  const dateParam = sp.date;
 
   if (!slotId) notFound();
 
@@ -31,37 +33,35 @@ export default async function DetailsPage(
 
   if (!slot.available) {
     return (
-      <main>
-        <StepIndicator current={3} />
-        <p className="text-muted">
-          That slot is no longer available. Please{" "}
-          <a href={`/book/${physicianId}`} className="text-brand underline">
-            choose another time
-          </a>
-          .
-        </p>
-      </main>
+      <p className="text-muted">
+        That slot is no longer available. Please{" "}
+        <a href={`/book/${physicianId}`} className="text-brand underline">
+          choose another time
+        </a>
+        .
+      </p>
     );
   }
 
-  const slotDate = new Date(slot.startsAt);
-  const slotLabel = slotDate.toLocaleDateString("en-CA", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }) + " at " + slotDate.toLocaleTimeString("en-CA", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const slotLabel =
+    slot.startsAt.toLocaleDateString("en-CA", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }) +
+    " at " +
+    slot.startsAt.toLocaleTimeString("en-CA", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
 
   const backHref = dateParam
     ? `/book/${physicianId}?date=${dateParam}`
     : `/book/${physicianId}`;
 
   return (
-    <main>
-      <StepIndicator current={3} />
+    <>
       <BackLink href={backHref} />
       <h1 className="text-2xl font-semibold text-foreground mb-1">
         Your details
@@ -69,13 +69,45 @@ export default async function DetailsPage(
       <p className="text-muted mb-8">
         Complete the form below to confirm your appointment.
       </p>
-
       <DetailsForm
+        key={crypto.randomUUID()}
         slotId={slotId}
         slotLabel={slotLabel}
         physicianName={physician.name}
         action={createBooking}
       />
+    </>
+  );
+}
+
+function Detailsskeleton() {
+  return (
+    <div className="flex flex-col gap-5 mt-14">
+      <div className="h-14 rounded-xl bg-surface animate-pulse" />
+      <div className="grid grid-cols-2 gap-5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-12 rounded-lg bg-surface animate-pulse" />
+        ))}
+      </div>
+      <div className="h-12 rounded-lg bg-surface animate-pulse" />
+      <div className="h-24 rounded-lg bg-surface animate-pulse" />
+      <div className="h-12 rounded-lg bg-surface animate-pulse" />
+    </div>
+  );
+}
+
+export default function DetailsPage(
+  props: PageProps<"/book/[physicianId]/details">
+) {
+  return (
+    <main>
+      <StepIndicator current={3} />
+      <Suspense fallback={<Detailsskeleton />}>
+        <DetailsContent
+          params={props.params as Promise<{ physicianId: string }>}
+          searchParams={props.searchParams as Promise<Record<string, string>>}
+        />
+      </Suspense>
     </main>
   );
 }

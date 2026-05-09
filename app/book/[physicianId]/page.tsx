@@ -18,19 +18,21 @@ function parseDate(s: string | null): Date {
   return isNaN(d.getTime()) ? today() : d;
 }
 
-export default async function SlotPickerPage(
-  props: PageProps<"/book/[physicianId]">
-) {
-  const { physicianId } = await props.params;
-  const sp = await props.searchParams;
-  const date = parseDate((sp as Record<string, string>).date ?? null);
+async function SlotPickerContent({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ physicianId: string }>;
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const [{ physicianId }, sp] = await Promise.all([params, searchParams]);
+  const date = parseDate(sp.date ?? null);
 
   const physician = await getPhysician(physicianId);
   if (!physician) notFound();
 
   return (
-    <main>
-      <StepIndicator current={2} />
+    <>
       <BackLink href="/book" />
       <h1 className="text-2xl font-semibold text-foreground mb-1">
         Select a time
@@ -38,7 +40,7 @@ export default async function SlotPickerPage(
       <p className="text-muted mb-8">
         Booking with{" "}
         <span className="text-foreground font-medium">{physician.name}</span>
-        {" "}·{" "}
+        {" · "}
         <span>{physician.specialty}</span>
       </p>
 
@@ -49,15 +51,41 @@ export default async function SlotPickerPage(
         fallback={
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-10 rounded-lg bg-surface animate-pulse"
-              />
+              <div key={i} className="h-10 rounded-lg bg-surface animate-pulse" />
             ))}
           </div>
         }
       >
         <SlotGrid physicianId={physicianId} date={date} />
+      </Suspense>
+    </>
+  );
+}
+
+export default function SlotPickerPage(
+  props: PageProps<"/book/[physicianId]">
+) {
+  return (
+    <main>
+      <StepIndicator current={2} />
+      <Suspense
+        fallback={
+          <div className="flex flex-col gap-4 mt-6">
+            <div className="h-4 w-48 rounded bg-surface animate-pulse" />
+            <div className="h-8 w-64 rounded bg-surface animate-pulse" />
+            <div className="h-10 w-48 rounded-lg bg-surface animate-pulse mt-4" />
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="h-10 rounded-lg bg-surface animate-pulse" />
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <SlotPickerContent
+          params={props.params as Promise<{ physicianId: string }>}
+          searchParams={props.searchParams as Promise<Record<string, string>>}
+        />
       </Suspense>
     </main>
   );
