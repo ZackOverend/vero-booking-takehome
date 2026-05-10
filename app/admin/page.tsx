@@ -5,8 +5,10 @@ import { eq, desc } from "drizzle-orm";
 import type { BookingStatus } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
+import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
 import BookingRow from "./_components/BookingRow";
 import LiveRefresh from "./_components/LiveRefresh";
+import AiToggle from "./_components/AiToggle";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled"];
 
@@ -63,14 +65,16 @@ async function BookingsTable({
   );
 }
 
-export default function AdminPage(props: PageProps<"/admin">) {
+async function AdminHeader() {
+  const aiEnabled = await getAiEnabled();
   return (
-    <div className="max-w-4xl mx-auto w-full px-4 py-12">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
-          <p className="text-muted text-sm mt-1">Manage patient appointments</p>
-        </div>
+    <div className="flex items-center justify-between mb-8">
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
+        <p className="text-muted text-sm mt-1">Manage patient appointments</p>
+      </div>
+      <div className="flex items-center gap-4">
+        <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
         <form action={logout}>
           <button
             type="submit"
@@ -80,6 +84,25 @@ export default function AdminPage(props: PageProps<"/admin">) {
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+export default function AdminPage(props: PageProps<"/admin">) {
+  return (
+    <div className="max-w-4xl mx-auto w-full px-4 py-12">
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
+              <p className="text-muted text-sm mt-1">Manage patient appointments</p>
+            </div>
+          </div>
+        }
+      >
+        <AdminHeader />
+      </Suspense>
 
       <Suspense
         fallback={
