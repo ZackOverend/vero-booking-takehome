@@ -55,17 +55,6 @@ export default function BookingRow({ booking, updateStatusAction }: Props) {
     year: "numeric",
   });
 
-  const cancelButton = (
-    <form action={() => updateStatusAction(booking.id, "cancelled")}>
-      <button
-        type="submit"
-        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors"
-      >
-        Cancel
-      </button>
-    </form>
-  );
-
   return (
     <li className="px-5 py-4">
       <div className="flex items-start justify-between gap-4">
@@ -93,7 +82,16 @@ export default function BookingRow({ booking, updateStatusAction }: Props) {
               </button>
             </form>
           )}
-          {booking.status !== "cancelled" && cancelButton}
+          {booking.status !== "cancelled" && (
+            <form action={() => updateStatusAction(booking.id, "cancelled")}>
+              <button
+                type="submit"
+                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </form>
+          )}
           <button
             onClick={() => setExpanded((e) => !e)}
             className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:text-foreground hover:border-brand transition-colors"
@@ -117,6 +115,18 @@ export default function BookingRow({ booking, updateStatusAction }: Props) {
             </div>
           )}
           <DetailField label="Booked at" value={bookedAtStr} />
+          <div className="col-span-2 sm:col-span-3 pt-2 border-t border-border mt-1">
+            <p className="text-xs text-muted uppercase tracking-wide mb-1.5">Override status</p>
+            <select
+              value={booking.status}
+              onChange={(e) => updateStatusAction(booking.id, e.target.value as BookingStatus)}
+              className="text-xs font-medium px-2 py-1.5 rounded-lg border border-border bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+            >
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
         </div>
       )}
     </li>

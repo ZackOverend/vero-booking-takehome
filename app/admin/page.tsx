@@ -130,9 +130,9 @@ async function StatusFilter({
         <a
           key={s}
           href={s ? `/admin?status=${s}` : "/admin"}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-center min-w-24 ${
             current === s
-              ? "bg-brand text-brand-fg"
+              ? "bg-brand text-brand-fg border border-transparent"
               : "bg-surface border border-border text-muted hover:text-foreground hover:border-brand"
           }`}
         >
