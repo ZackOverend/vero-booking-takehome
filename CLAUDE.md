@@ -298,7 +298,7 @@ Pause for sign-off between phases.
 ## AI Features (Phase 4.5)
 
 ### Overview
-Two AI features targeting the clinician (the actual buyer), powered by Gemma 4 (`gemma4:e4b`) via Ollama — either local (`http://localhost:11434`) or Ollama Cloud. Uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with Ollama's OpenAI-compatible endpoint.
+Two AI features targeting the clinician (the actual buyer), powered by Gemma 4 (`gemma4:31b`) via Ollama Cloud (`https://ollama.com`). Uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with Ollama's OpenAI-compatible endpoint (`https://ollama.com/v1`).
 
 ### Feature toggle
 Stored in a `settings` DB table (`ai_enabled: boolean`), seeded from the `AI_ENABLED` env var on first run. Admin panel has a toggle switch that calls a server action to flip it live — no redeploy needed. All AI code paths check this first and degrade gracefully.
@@ -403,9 +403,9 @@ Additional notes: {notes ?? "None"}
 
 ### Environment variables
 ```
-AI_ENABLED=false           # seeds the settings table on first run
-OLLAMA_BASE_URL=http://localhost:11434  # or Ollama Cloud endpoint
-OLLAMA_API_KEY=ollama      # any string locally (Ollama ignores it); real key for cloud
+AI_ENABLED=false              # seeds the settings table on first run
+OLLAMA_API_KEY=               # Bearer token from ollama.com/settings/keys
+OLLAMA_MODEL=gemma4:31b       # verify available models via GET https://ollama.com/v1/models
 ```
 
 ### Ollama client setup
@@ -413,26 +413,25 @@ OLLAMA_API_KEY=ollama      # any string locally (Ollama ignores it); real key fo
 import { createOpenAI } from "@ai-sdk/openai";
 
 const ollama = createOpenAI({
-  baseURL: process.env.OLLAMA_BASE_URL + "/v1",
-  apiKey: process.env.OLLAMA_API_KEY ?? "ollama",
+  baseURL: "https://ollama.com/v1",
+  apiKey: process.env.OLLAMA_API_KEY!,
 });
 
-const model = ollama("gemma4:e4b");
+const model = ollama(process.env.OLLAMA_MODEL ?? "gemma4:31b");
 ```
-
-Ollama's OpenAI-compatible endpoint is at `{OLLAMA_BASE_URL}/v1`. The API key is required by the SDK but ignored by Ollama locally — pass `"ollama"` or any non-empty string. For cloud, use the real key. Model name must match exactly as shown in `ollama list`.
 
 ### Schema additions
 - `triageLevel` nullable pgEnum on `bookings`: `urgent`, `soon`, `routine`, `administrative`, `safety_flag`
 - `settings` table: `id`, `aiEnabled` (boolean, default false)
 
 ### Key decisions
+- **AI features are fully optional** — the entire app works without them. No `OLLAMA_API_KEY` = AI disabled, no errors, no broken UI. Everything degrades gracefully: null triage level shows no badge, no summary shown.
 - `after()` over synchronous classification — patient UX must not be affected by AI latency
 - Nullable `triageLevel` — schema never breaks when AI is off or fails
 - DB-stored toggle over env var — can be flipped live in the admin panel without redeployment
-- Gemma 4 (`gemma4:e4b`) — fast enough locally, no external API costs, demo-day safe via Ollama Cloud
+- Gemma 4 (`gemma4:31b`) via Ollama Cloud — no local dependency, demo-day safe
 - Vercel AI SDK — handles streaming boilerplate, OpenAI-compatible so works with Ollama unchanged
-- Simplified 3-tier triage (not full CTAS) — appropriate for scheduled care, documented as such
+- 4-tier triage (not full CTAS) — appropriate for scheduled care, documented as such
 
 ---
 

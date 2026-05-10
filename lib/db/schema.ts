@@ -9,10 +9,19 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
+
 export const bookingStatusEnum = pgEnum("booking_status", [
   "pending",
   "confirmed",
   "cancelled",
+]);
+
+export const triageLevelEnum = pgEnum("triage_level", [
+  "urgent",
+  "soon",
+  "routine",
+  "administrative",
+  "safety_flag",
 ]);
 
 export const physicians = pgTable("physicians", {
@@ -50,10 +59,17 @@ export const bookings = pgTable("bookings", {
   reason: text("reason").notNull(),
   notes: text("notes"),
   status: bookingStatusEnum("status").default("pending").notNull(),
+  triageLevel: triageLevelEnum("triage_level"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const settings = pgTable("settings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  aiEnabled: boolean("ai_enabled").default(false).notNull(),
 });
 
 export type Physician = typeof physicians.$inferSelect;
 export type TimeSlot = typeof timeSlots.$inferSelect;
 export type Booking = typeof bookings.$inferSelect;
 export type BookingStatus = typeof bookingStatusEnum.enumValues[number];
+export type TriageLevel = typeof triageLevelEnum.enumValues[number];
