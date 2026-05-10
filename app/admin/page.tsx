@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import type { BookingStatus } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import BookingRow from "./_components/BookingRow";
+import LiveRefresh from "./_components/LiveRefresh";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled"];
 
@@ -64,6 +65,7 @@ async function BookingsTable({
 export default function AdminPage(props: PageProps<"/admin">) {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
+      <LiveRefresh />
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>

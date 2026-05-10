@@ -302,3 +302,4 @@ Pause for sign-off between phases.
 - Email notifications on booking submission and status change
 - Calendar export (.ics) from confirmation page
 - Rate limiting on `createBooking` action
+- Real-time admin updates: current polling (`router.refresh()` every 10s) is acceptable for low-traffic clinics. Production path is Postgres `LISTEN/NOTIFY` with the WebSocket Pool driver + SSE, but Vercel serverless function timeouts kill the persistent connection — requires a long-lived Node.js server or managed pub/sub (Ably, Pusher)
