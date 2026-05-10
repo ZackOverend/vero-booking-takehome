@@ -82,7 +82,7 @@ export default function BookingRow({ booking, updateStatusAction }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center justify-end gap-2 shrink-0 w-52">
           {booking.status === "pending" && (
             <form action={() => updateStatusAction(booking.id, "confirmed")}>
               <button

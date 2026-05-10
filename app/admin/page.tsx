@@ -4,6 +4,7 @@ import { bookings, timeSlots, physicians } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import type { BookingStatus } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
+import { logout } from "@/lib/actions/auth";
 import BookingRow from "./_components/BookingRow";
 import LiveRefresh from "./_components/LiveRefresh";
 
@@ -64,21 +65,37 @@ async function BookingsTable({
 
 export default function AdminPage(props: PageProps<"/admin">) {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <LiveRefresh />
+    <div className="max-w-4xl mx-auto w-full px-4 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
           <p className="text-muted text-sm mt-1">Manage patient appointments</p>
         </div>
+        <form action={logout}>
+          <button
+            type="submit"
+            className="text-sm text-muted hover:text-foreground transition-colors"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
 
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="flex gap-2 mb-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
+            ))}
+          </div>
+        }
+      >
         <StatusFilter
           searchParams={props.searchParams as Promise<Record<string, string>>}
         />
       </Suspense>
 
+      <LiveRefresh />
       <Suspense
         fallback={
           <div className="flex flex-col gap-3 mt-4">
