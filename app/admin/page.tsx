@@ -40,20 +40,24 @@ async function BookingsTable({
     .where(filter ? eq(bookings.status, filter) : undefined)
     .orderBy(desc(bookings.createdAt));
 
-  if (rows.length === 0) {
-    return (
-      <p className="text-muted text-sm py-12 text-center">
-        No bookings{filter ? ` with status "${filter}"` : ""}.
-      </p>
-    );
-  }
-
   return (
-    <ul className="flex flex-col divide-y divide-border">
-      {rows.map((row) => (
-        <BookingRow key={row.id} booking={row} updateStatus={updateBookingStatus} />
-      ))}
-    </ul>
+    <div className="w-full rounded-xl border border-border">
+      {rows.length === 0 ? (
+        <p className="text-muted text-sm py-12 text-center">
+          No bookings{filter ? ` with status "${filter}"` : ""}.
+        </p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-border">
+          {rows.map((row) => (
+            <BookingRow
+              key={row.id}
+              booking={row}
+              updateStatusAction={updateBookingStatus}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -68,19 +72,26 @@ export default function AdminPage(props: PageProps<"/admin">) {
       </div>
 
       <Suspense fallback={null}>
-        <StatusFilter searchParams={props.searchParams as Promise<Record<string, string>>} />
+        <StatusFilter
+          searchParams={props.searchParams as Promise<Record<string, string>>}
+        />
       </Suspense>
 
       <Suspense
         fallback={
           <div className="flex flex-col gap-3 mt-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
+              <div
+                key={i}
+                className="h-16 rounded-xl bg-surface animate-pulse"
+              />
             ))}
           </div>
         }
       >
-        <BookingsTable searchParams={props.searchParams as Promise<Record<string, string>>} />
+        <BookingsTable
+          searchParams={props.searchParams as Promise<Record<string, string>>}
+        />
       </Suspense>
     </div>
   );

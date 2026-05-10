@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { BookingStatus } from "@/lib/db/schema";
+import { statusStyles } from "@/lib/utils";
 
 type Booking = {
   id: string;
@@ -19,84 +20,80 @@ type Booking = {
   specialty: string;
 };
 
-const statusStyles: Record<BookingStatus, string> = {
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  confirmed: "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-700 border-red-200",
+type Props = {
+  booking: Booking;
+  updateStatusAction: (id: string, status: BookingStatus) => Promise<void>;
 };
 
-export default function BookingRow({
-  booking,
-  updateStatus,
-}: {
-  booking: Booking;
-  updateStatus: (id: string, status: BookingStatus) => Promise<void>;
-}) {
+function DetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted uppercase tracking-wide mb-0.5">{label}</p>
+      <p className="text-foreground">{value}</p>
+    </div>
+  );
+}
+
+export default function BookingRow({ booking, updateStatusAction }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   const apptDate = new Date(booking.startsAt);
+  const apptDateStr = apptDate.toLocaleDateString("en-CA", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const apptTimeStr = apptDate.toLocaleTimeString("en-CA", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  const bookedAtStr = new Date(booking.createdAt).toLocaleDateString("en-CA", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const cancelButton = (
+    <form action={() => updateStatusAction(booking.id, "cancelled")}>
+      <button
+        type="submit"
+        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors"
+      >
+        Cancel
+      </button>
+    </form>
+  );
 
   return (
-    <li className="py-4">
+    <li className="px-5 py-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-medium text-foreground">{booking.patientName}</span>
-            <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusStyles[booking.status]}`}
-            >
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusStyles(booking.status)}`}>
               {booking.status}
             </span>
             <span className="font-mono text-xs text-muted">{booking.reference}</span>
           </div>
           <p className="text-sm text-muted mt-0.5">
-            {booking.physicianName} · {booking.specialty} ·{" "}
-            {apptDate.toLocaleDateString("en-CA", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}{" "}
-            at{" "}
-            {apptDate.toLocaleTimeString("en-CA", {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })}
+            {`${booking.physicianName} · ${booking.specialty} · ${apptDateStr} at ${apptTimeStr}`}
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {booking.status === "pending" && (
-            <>
-              <form action={() => updateStatus(booking.id, "confirmed")}>
-                <button
-                  type="submit"
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand text-brand-fg hover:bg-brand-hover transition-colors"
-                >
-                  Confirm
-                </button>
-              </form>
-              <form action={() => updateStatus(booking.id, "cancelled")}>
-                <button
-                  type="submit"
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </form>
-            </>
-          )}
-          {booking.status === "confirmed" && (
-            <form action={() => updateStatus(booking.id, "cancelled")}>
+            <form action={() => updateStatusAction(booking.id, "confirmed")}>
               <button
                 type="submit"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors"
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand text-brand-fg hover:bg-brand-hover transition-colors"
               >
-                Cancel
+                Confirm
               </button>
             </form>
           )}
+          {booking.status !== "cancelled" && cancelButton}
           <button
             onClick={() => setExpanded((e) => !e)}
             className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:text-foreground hover:border-brand transition-colors"
@@ -108,38 +105,18 @@ export default function BookingRow({
 
       {expanded && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm bg-surface rounded-xl px-4 py-4 border border-border">
-          <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Email</p>
-            <p className="text-foreground">{booking.email}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Phone</p>
-            <p className="text-foreground">{booking.phone}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Date of birth</p>
-            <p className="text-foreground">{booking.dob}</p>
-          </div>
+          <DetailField label="Email" value={booking.email} />
+          <DetailField label="Phone" value={booking.phone} />
+          <DetailField label="Date of birth" value={booking.dob} />
           <div className="col-span-2 sm:col-span-3">
-            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Reason</p>
-            <p className="text-foreground">{booking.reason}</p>
+            <DetailField label="Reason" value={booking.reason} />
           </div>
           {booking.notes && (
             <div className="col-span-2 sm:col-span-3">
-              <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Notes</p>
-              <p className="text-foreground">{booking.notes}</p>
+              <DetailField label="Notes" value={booking.notes} />
             </div>
           )}
-          <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Booked at</p>
-            <p className="text-foreground">
-              {new Date(booking.createdAt).toLocaleDateString("en-CA", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          </div>
+          <DetailField label="Booked at" value={bookedAtStr} />
         </div>
       )}
     </li>
