@@ -287,10 +287,152 @@ Phases:
 2. Patient flow read paths
 3. Booking action + confirmation
 4. Admin (proxy.ts gate, dashboard, inline actions)
+4.5. AI features (triage classification + streaming summary)
 5. UX polish (framer-motion, lenis)
 6. README
 
 Pause for sign-off between phases.
+
+---
+
+## AI Features (Phase 4.5)
+
+### Overview
+Two AI features targeting the clinician (the actual buyer), powered by Gemma 4 (`gemma4:e4b`) via Ollama — either local (`http://localhost:11434`) or Ollama Cloud. Uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with Ollama's OpenAI-compatible endpoint.
+
+### Feature toggle
+Stored in a `settings` DB table (`ai_enabled: boolean`), seeded from the `AI_ENABLED` env var on first run. Admin panel has a toggle switch that calls a server action to flip it live — no redeploy needed. All AI code paths check this first and degrade gracefully.
+
+### Triage classification prompts
+
+**Pre-flight safety check (keyword gate — runs BEFORE AI, in code):**
+```ts
+const EMERGENCY_KEYWORDS = [
+  "chest pain", "can't breathe", "cannot breathe", "difficulty breathing",
+  "shortness of breath", "stroke", "heart attack", "unconscious", "suicide",
+  "suicidal", "want to die", "kill myself", "overdose", "severe bleeding",
+  "not breathing", "collapsed", "seizure", "anaphylaxis", "allergic reaction"
+];
+
+function isSafetyFlag(text: string): boolean {
+  const lower = text.toLowerCase();
+  return EMERGENCY_KEYWORDS.some(kw => lower.includes(kw));
+}
+```
+If flagged: set `triageLevel = "safety_flag"`, show emergency redirect UI, do NOT call AI.
+
+**Triage classification system prompt:**
+```
+You are a medical booking assistant for an outpatient clinic in Toronto, Canada. Classify the urgency of a patient's appointment request based on their stated reason for visit.
+
+Categories:
+urgent — Acute, new, or rapidly worsening symptom requiring priority attention. Examples: new chest discomfort without emergency features, sudden vision or hearing change, acute infection with systemic symptoms, significant change in a chronic condition, unexplained weight loss.
+soon — Needs attention within days to weeks. Not immediately dangerous but should not wait months. Examples: worsening known condition, new non-acute symptom, time-sensitive follow-up, mental health concern needing prompt attention.
+routine — Stable scheduled care. Examples: chronic disease management, annual physical, preventive care, stable mental health follow-up, non-urgent test results review.
+administrative — No clinical assessment required. Examples: prescription renewal, sick note, referral letter, insurance form, lab results already reviewed.
+
+Examples:
+Reason: "I've had a fever for 3 days and my throat is getting worse" → soon
+Reason: "Need my metformin refill" → administrative
+Reason: "Annual physical" → routine
+Reason: "New lump I noticed last week, growing quickly" → urgent
+Reason: "Anxiety has been much worse since last month, hard to function" → soon
+Reason: "Blood pressure follow-up" → routine
+
+Rules:
+- Reply with ONLY one word: urgent, soon, routine, or administrative
+- No explanation, punctuation, or other text
+- When uncertain between two adjacent tiers, choose the higher urgency
+- Base your decision only on the text provided — do not infer beyond it
+```
+
+**Triage user message:**
+```
+Reason for visit: {reason}
+Additional notes: {notes ?? "None"}
+```
+
+**Clinical summary system prompt:**
+```
+You are a clinical documentation assistant for an outpatient physician in Toronto, Canada. Write one sentence summarising a patient's appointment request in plain clinical language a physician would read when scanning their day's bookings.
+
+Rules:
+- One sentence only, maximum 25 words
+- Plain clinical language — no jargon, no diagnosis
+- Third person: begin with "Patient presents with", "Patient requesting", or "Patient reports"
+- Do not include the patient's name
+- Do not add information not stated in the patient's text
+- Do not make a diagnosis or suggest treatment
+- End with a period
+```
+
+**Summary user message:**
+```
+Physician specialty: {specialty}
+Reason for visit: {reason}
+Additional notes: {notes ?? "None"}
+```
+
+### Triage classification
+- Runs via Next.js `after()` in `createBooking` — fires after the patient's redirect, zero impact on booking UX
+- Four-tier system based on Canadian outpatient clinical literature (no single national standard exists — this aligns with published McMaster/Ontario practice):
+  - `urgent` — acute or worsening, may need priority/same-day review
+  - `soon` — needs attention within days, not immediately dangerous
+  - `routine` — chronic care, stable, next available slot
+  - `administrative` — renewals, forms, sick notes, no clinical assessment needed
+  - `safety_flag` — emergency language detected (chest pain, can't breathe, suicidal ideation) — blocks booking, redirects to 911/ED. This is a hard-coded keyword gate, NOT AI triage.
+- Stored as a nullable pgEnum `triageLevel` on `bookings` — null if AI disabled or classification fails
+- Shown as a coloured badge on `BookingRow` in the admin dashboard
+- Prompt must return exactly one of the four values — validate response, reject anything else
+- AI label is a **suggestion only** — must be clearly marked as such, never presented as clinical determination
+- Doctor can override via the status dropdown in the details panel
+
+### Liability
+- AI triage is decision support, not decision replacement — physician retains full professional responsibility
+- Every AI classification must be visible, overridable, and never shown to the patient as a clinical determination
+- Required disclaimer on booking confirmation: "If you believe you are experiencing a medical emergency, call 911 or go to your nearest emergency department."
+- Required disclaimer on admin dashboard: "Urgency suggestions are generated automatically from patient-reported reason for visit and have not been reviewed by a clinician."
+- Safety flag is a hard-coded non-AI keyword screen — not a medical device
+
+### Streaming clinical summary
+- Triggered when a doctor opens the details panel
+- Route Handler at `/api/admin/summary` — must manually verify `admin_session` cookie (proxy only covers page routes)
+- Streams via Vercel AI SDK `streamText` → `toTextStreamResponse()`
+- Client reads stream with `useEffect` + `ReadableStream`
+- Shown inside the expanded details panel as the doctor reads it
+
+### Environment variables
+```
+AI_ENABLED=false           # seeds the settings table on first run
+OLLAMA_BASE_URL=http://localhost:11434  # or Ollama Cloud endpoint
+OLLAMA_API_KEY=ollama      # any string locally (Ollama ignores it); real key for cloud
+```
+
+### Ollama client setup
+```ts
+import { createOpenAI } from "@ai-sdk/openai";
+
+const ollama = createOpenAI({
+  baseURL: process.env.OLLAMA_BASE_URL + "/v1",
+  apiKey: process.env.OLLAMA_API_KEY ?? "ollama",
+});
+
+const model = ollama("gemma4:e4b");
+```
+
+Ollama's OpenAI-compatible endpoint is at `{OLLAMA_BASE_URL}/v1`. The API key is required by the SDK but ignored by Ollama locally — pass `"ollama"` or any non-empty string. For cloud, use the real key. Model name must match exactly as shown in `ollama list`.
+
+### Schema additions
+- `triageLevel` nullable pgEnum on `bookings`: `urgent`, `soon`, `routine`, `administrative`, `safety_flag`
+- `settings` table: `id`, `aiEnabled` (boolean, default false)
+
+### Key decisions
+- `after()` over synchronous classification — patient UX must not be affected by AI latency
+- Nullable `triageLevel` — schema never breaks when AI is off or fails
+- DB-stored toggle over env var — can be flipped live in the admin panel without redeployment
+- Gemma 4 (`gemma4:e4b`) — fast enough locally, no external API costs, demo-day safe via Ollama Cloud
+- Vercel AI SDK — handles streaming boilerplate, OpenAI-compatible so works with Ollama unchanged
+- Simplified 3-tier triage (not full CTAS) — appropriate for scheduled care, documented as such
 
 ---
 
