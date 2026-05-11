@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { bookings, timeSlots, physicians } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import type { BookingStatus } from "@/lib/db/schema";
+import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
@@ -17,7 +17,10 @@ async function BookingsTable({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const sp = await searchParams;
+  const [sp, aiEnabled] = await Promise.all([
+    searchParams,
+    getAiEnabled(),
+  ]);
   const filter = STATUSES.includes(sp.status as BookingStatus)
     ? (sp.status as BookingStatus)
     : null;
@@ -33,6 +36,7 @@ async function BookingsTable({
       reason: bookings.reason,
       notes: bookings.notes,
       status: bookings.status,
+      triageLevel: bookings.triageLevel,
       createdAt: bookings.createdAt,
       startsAt: timeSlots.startsAt,
       physicianName: physicians.name,
@@ -57,6 +61,7 @@ async function BookingsTable({
               key={row.id}
               booking={row}
               updateStatusAction={updateBookingStatus}
+              aiEnabled={aiEnabled}
             />
           ))}
         </ul>

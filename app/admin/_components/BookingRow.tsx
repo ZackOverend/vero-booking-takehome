@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { BookingStatus } from "@/lib/db/schema";
-import { statusStyles } from "@/lib/utils";
+import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
+import { statusStyles, triageStyles, triageLabel, triageBorder } from "@/lib/utils";
+import TriageIcon from "./TriageIcon";
 
 type Booking = {
   id: string;
@@ -14,6 +15,7 @@ type Booking = {
   reason: string;
   notes: string | null;
   status: BookingStatus;
+  triageLevel: TriageLevel | null;
   createdAt: Date;
   startsAt: Date;
   physicianName: string;
@@ -23,6 +25,7 @@ type Booking = {
 type Props = {
   booking: Booking;
   updateStatusAction: (id: string, status: BookingStatus) => Promise<void>;
+  aiEnabled: boolean;
 };
 
 function DetailField({ label, value }: { label: string; value: string }) {
@@ -34,7 +37,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function BookingRow({ booking, updateStatusAction }: Props) {
+export default function BookingRow({ booking, updateStatusAction, aiEnabled }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   const apptDate = new Date(booking.startsAt);
@@ -58,12 +61,21 @@ export default function BookingRow({ booking, updateStatusAction }: Props) {
   return (
     <li className="px-5 py-4">
       <div className="flex items-start justify-between gap-4">
+        {aiEnabled && booking.triageLevel && (
+          <div className={`w-1 self-stretch rounded-full shrink-0 ${triageBorder(booking.triageLevel)}`} />
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-medium text-foreground">{booking.patientName}</span>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusStyles(booking.status)}`}>
               {booking.status}
             </span>
+            {aiEnabled && booking.triageLevel && (
+              <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${triageStyles(booking.triageLevel)}`}>
+                <TriageIcon level={booking.triageLevel} size={10} />
+                {triageLabel(booking.triageLevel)}
+              </span>
+            )}
             <span className="font-mono text-xs text-muted">{booking.reference}</span>
           </div>
           <p className="text-sm text-muted mt-0.5">
