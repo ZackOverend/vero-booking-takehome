@@ -3,6 +3,7 @@
 import { useActionState, useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { BookingActionState } from "@/lib/actions/bookings";
+import { getSuggestions } from "@/lib/booking-suggestions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -50,6 +51,7 @@ type Props = {
   slotId: string;
   slotLabel: string;
   physicianName: string;
+  specialty: string;
   action: (
     prev: BookingActionState,
     data: FormData,
@@ -69,8 +71,10 @@ export default function DetailsForm({
   slotId,
   slotLabel,
   physicianName,
+  specialty,
   action,
 }: Props) {
+  const suggestions = getSuggestions(specialty);
   const [state, formAction] = useActionState<BookingActionState, FormData>(
     action,
     null,
@@ -169,6 +173,20 @@ export default function DetailsForm({
           label="Reason for visit"
           error={fe?.reason?.[0]}
         >
+          {suggestions.length > 0 && fields.reason === "" && (
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setFields((f) => ({ ...f, reason: s }))}
+                  className="text-xs px-2.5 py-1 rounded-full border border-border bg-surface text-muted hover:border-brand hover:text-foreground transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             id={id("reason")}
             name="reason"

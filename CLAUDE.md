@@ -11,7 +11,7 @@
 | Styling | tailwindcss | ^4 |
 | Compiler | @tailwindcss/postcss | ^4 |
 | Language | typescript | ^5 |
-| ORM | drizzle-orm (to be added) | — |
+| ORM | drizzle-orm | ^0.43 |
 | DB | Neon Postgres (serverless) | — |
 | Deploy | Vercel | — |
 
@@ -80,6 +80,14 @@ import { refresh } from 'next/cache'
 import { revalidatePath } from 'next/cache' // also fine for path-based
 ```
 
+### `revalidateTag` takes two arguments in v16
+
+```ts
+revalidateTag("settings", "max") // tag name + cache profile
+```
+
+Omitting the second argument will throw at runtime.
+
 ### Server Functions / Server Actions
 
 The term is now **Server Functions**. "Server Action" refers specifically to a Server Function used in an `action` prop context. The `'use server'` directive still works the same way.
@@ -120,7 +128,7 @@ PostCSS plugin is `@tailwindcss/postcss` (already configured in `postcss.config.
 
 ### `middleware` → `proxy`
 
-The `middleware.ts` convention is deprecated in v16 in favor of `proxy.ts`. We're not using either in this app, but if auth or rate-limiting is added later, use `proxy.ts` with a named `proxy` export. Note: `proxy` runs on Node.js only — no edge runtime.
+The `middleware.ts` convention is deprecated in v16 in favor of `proxy.ts`. This project uses `proxy.ts` for admin auth. Use a named `proxy` export with a `matcher` config. Note: `proxy` runs on Node.js only — no edge runtime.
 
 ---
 
@@ -130,19 +138,31 @@ The structure is **emergent** — do not create directories speculatively. Add f
 
 ```
 app/
-├── layout.tsx              ← root layout, fonts, global nav
+├── layout.tsx              ← root layout, fonts
 ├── page.tsx                ← redirect to /book
 ├── globals.css             ← Tailwind import + @theme tokens
+├── _components/
+│   └── BackLink.tsx
 ├── book/
+│   ├── layout.tsx          ← StepIndicator wrapper
 │   ├── page.tsx            ← Step 1: physician list
 │   └── [physicianId]/
 │       ├── page.tsx        ← Step 2: date + time slot picker
+│       ├── _components/    ← DateNav, SlotGrid
 │       └── details/
-│           └── page.tsx    ← Step 3: patient details form
+│           ├── page.tsx    ← Step 3: patient details form
+│           └── _components/DetailsForm.tsx
 ├── confirmation/
 │   └── page.tsx            ← booking confirmed (reference #)
+├── api/
+│   └── admin/
+│       └── summary/        ← (Phase 4.5) streaming clinical summary
+│           └── route.ts
 └── admin/
-    └── page.tsx            ← booking management dashboard
+    ├── page.tsx            ← booking management dashboard
+    ├── login/page.tsx
+    └── _components/        ← BookingRow, AiToggle, LiveRefresh, TriageIcon
+proxy.ts                    ← admin auth gate (/admin/:path* except /admin/login)
 ```
 
 Non-route code lives alongside routes or in a shared `lib/` at root level (not under `src/`). Do **not** create a `src/` wrapper — the project uses `app/` at the repo root.
@@ -162,7 +182,10 @@ Generated per physician. Fields: `id`, `physician_id`, `starts_at` (timestamp), 
 Slots are marked unavailable when a booking is confirmed against them. Simple boolean flag — no optimistic locking yet (listed as future work).
 
 ### `bookings`
-Created by patients. Fields: `id`, `slot_id`, `reference` (nanoid, shown on confirmation), `patient_name`, `dob`, `email`, `phone`, `reason`, `notes`, `status` (`pending` | `confirmed` | `cancelled`), `created_at`.
+Created by patients. Fields: `id`, `slot_id`, `reference` (nanoid, shown on confirmation), `patient_name`, `dob`, `email`, `phone`, `reason`, `notes`, `status` (`pending` | `confirmed` | `cancelled`), `triage_level` (nullable pgEnum — set async by AI after booking), `created_at`.
+
+### `settings`
+Single-row config table. Fields: `id`, `ai_enabled` (boolean, default false). Seeded from `AI_ENABLED` env var on first run. Mutated by the admin AI toggle.
 
 ---
 
@@ -174,11 +197,18 @@ All mutations go through Server Functions in `lib/actions/`. No separate API rou
 lib/
 ├── db/
 │   ├── schema.ts           ← Drizzle table definitions
-│   └── index.ts            ← db client (Neon + drizzle)
+│   ├── index.ts            ← db client (Neon + drizzle)
+│   ├── seed.ts             ← physicians + slots seed script
+│   └── physician-data.ts   ← seeded physician records
 ├── actions/
 │   ├── bookings.ts         ← createBooking, updateStatus
-│   └── physicians.ts       ← getPhysicians, getAvailableSlots
-└── utils.ts                ← date helpers, reference generation
+│   ├── physicians.ts       ← getPhysicians, getAvailableSlots
+│   ├── settings.ts         ← getAiEnabled, toggleAi
+│   └── auth.ts             ← login, logout (admin cookie)
+├── ai/
+│   ├── client.ts           ← Ollama Cloud client setup
+│   └── triage.ts           ← isSafetyFlag, classifyTriage
+└── utils.ts                ← statusStyles, triageStyles, triageLabel, triageBorder
 ```
 
 Data-access functions (reads) live in `lib/actions/` too, exported without `'use server'` unless called from a Client Component.
@@ -229,9 +259,12 @@ Match Vero's clean, clinical aesthetic: lots of whitespace, neutral palette, pre
 ```
 DATABASE_URL=          # Neon connection string
 ADMIN_PASSWORD=        # plaintext password for /admin (stop-gap auth)
+AI_ENABLED=false       # seeds the settings table on first run
+OLLAMA_API_KEY=        # Bearer token from ollama.com/settings/keys
+OLLAMA_MODEL=gemma4:31b
 ```
 
-Never commit `.env.local`. Both vars go in Vercel env vars for production.
+Never commit `.env.local`. All vars go in Vercel env vars for production.
 
 ---
 

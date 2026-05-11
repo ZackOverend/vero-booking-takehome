@@ -74,6 +74,7 @@ async function DetailsContent({
         slotId={slotId}
         slotLabel={slotLabel}
         physicianName={physician.name}
+        specialty={physician.specialty}
         action={createBooking}
       />
     </>
