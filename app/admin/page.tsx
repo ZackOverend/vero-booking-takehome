@@ -9,10 +9,10 @@ import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
 import { triageLabel, triageStyles } from "@/lib/utils";
 import BookingRow from "./_components/BookingRow";
-import LiveRefresh from "./_components/LiveRefresh";
 import AiToggle from "./_components/AiToggle";
 import PhysicianSelect from "./_components/PhysicianSelect";
 import TriageIcon from "./_components/TriageIcon";
+import RefreshButton from "./_components/RefreshButton";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled"];
 const TRIAGE_LEVELS = triageLevelEnum.enumValues;
@@ -107,6 +107,7 @@ async function AdminHeader() {
       </div>
       <div className="flex items-center gap-4">
         <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
+        <RefreshButton />
         <form action={logout}>
           <button
             type="submit"
@@ -152,7 +153,6 @@ export default function AdminPage(props: PageProps<"/admin">) {
         />
       </Suspense>
 
-      <LiveRefresh />
       <Suspense
         fallback={
           <div className="flex flex-col gap-3 mt-4">
@@ -190,7 +190,7 @@ async function Filters({
 
   return (
     <div className="flex flex-col gap-3 mb-6">
-      {/* Status + Physician */}
+      {/* Status + Physician + Refresh */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-2 flex-wrap">
           {(["", ...STATUSES] as const).map((s) => (

@@ -157,7 +157,7 @@ app/
 └── admin/
     ├── page.tsx            ← booking management dashboard
     ├── login/page.tsx
-    └── _components/        ← BookingRow, AiToggle, LiveRefresh, TriageIcon, PhysicianSelect
+    └── _components/        ← BookingRow, AiToggle, TriageIcon, PhysicianSelect
 proxy.ts                    ← admin auth gate (/admin/:path* except /admin/login)
 ```
 
@@ -445,6 +445,6 @@ const model = ollama(process.env.OLLAMA_MODEL ?? "gemma4:31b");
 - Email notifications on booking submission and status change
 - Calendar export (.ics) from confirmation page
 - Rate limiting on `createBooking` action
-- Real-time admin updates: current polling (`router.refresh()` every 10s) is acceptable for low-traffic clinics. Production path is Postgres `LISTEN/NOTIFY` with the WebSocket Pool driver + SSE, but Vercel serverless function timeouts kill the persistent connection — requires a long-lived Node.js server or managed pub/sub (Ably, Pusher)
+- Real-time admin updates: polling was removed after it was found to interfere with `useOptimistic` on the AI toggle — `router.refresh()` firing mid-transition caused the optimistic state to snap back to the stale server value. Production path is Postgres `LISTEN/NOTIFY` with the WebSocket Pool driver + SSE, but Vercel serverless function timeouts kill the persistent connection — requires a long-lived Node.js server or managed pub/sub (Ably, Pusher).
 - Physician self-service portal (`/physician`): physicians manage their own slot availability — add ad-hoc slots, block time off. Needs its own auth layer (physician ID + PIN or magic link) scoped so a physician can only modify their own slots. Key constraints: cannot remove a slot with a confirmed booking against it; recurring availability templates ("Mon/Wed 9am–1pm") would be more practical than slot-by-slot management. Data layer (`time_slots.physician_id`, `time_slots.available`) already supports this without schema changes.
 - Streaming clinical summary in admin booking details: on-demand AI-generated one-sentence summary of the patient's reason for visit, streamed via Vercel AI SDK `streamText` into the expanded row. Descoped — triage badge already surfaces the actionable signal; the summary is redundant for low-volume clinical use.
