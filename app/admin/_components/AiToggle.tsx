@@ -23,21 +23,19 @@ export default function AiToggle({
     <button
       onClick={handleToggle}
       disabled={pending}
-      aria-label={optimisticEnabled ? "Disable AI features" : "Enable AI features"}
-      className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors disabled:opacity-50"
+      className={`flex items-center gap-2 w-full group transition-opacity ${pending ? "opacity-50" : ""}`}
+      aria-label={optimisticEnabled ? "Disable AI triage" : "Enable AI triage"}
     >
-      <span
-        className={`relative inline-flex w-9 h-5 rounded-full transition-colors ${
-          optimisticEnabled ? "bg-brand" : "bg-border"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-            optimisticEnabled ? "translate-x-4" : "translate-x-0"
-          }`}
-        />
+      <div className="relative w-2.5 h-2.5 shrink-0">
+        {optimisticEnabled ? (
+          <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-blue-400 blur-[2px] [animation:orb-pulse_2s_ease-in-out_infinite]" />
+        ) : (
+          <div className="w-2.5 h-2.5 rounded-full bg-border" />
+        )}
+      </div>
+      <span className="text-xs text-muted uppercase tracking-wide group-hover:text-foreground transition-colors">
+        AI Triage
       </span>
-      AI triage
     </button>
   );
 }

@@ -7,7 +7,7 @@ import { triageLevelEnum } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
-import { triageLabel, triageStyles } from "@/lib/utils";
+import { triageLabel, triageColor, triageStyles } from "@/lib/utils";
 import BookingRow from "./_components/BookingRow";
 import AiToggle from "./_components/AiToggle";
 import PhysicianSelect from "./_components/PhysicianSelect";
@@ -42,7 +42,7 @@ async function BookingsTable({
   const statusFilter = STATUSES.includes(sp.status as BookingStatus)
     ? (sp.status as BookingStatus)
     : null;
-  const triageFilter = TRIAGE_LEVELS.includes(sp.triage as TriageLevel)
+  const triageFilter = aiEnabled && TRIAGE_LEVELS.includes(sp.triage as TriageLevel)
     ? (sp.triage as TriageLevel)
     : null;
   const physicianFilter = sp.physician ?? null;
@@ -99,7 +99,6 @@ async function BookingsTable({
 }
 
 async function AdminHeader() {
-  const aiEnabled = await getAiEnabled();
   return (
     <div className="flex items-center justify-between pt-5 pb-3">
       <div>
@@ -107,7 +106,6 @@ async function AdminHeader() {
         <p className="text-muted text-sm mt-0.5">Manage patient appointments</p>
       </div>
       <div className="flex items-center gap-4">
-        <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
         <RefreshButton />
         <form action={logout}>
           <button
@@ -122,11 +120,74 @@ async function AdminHeader() {
   );
 }
 
+async function TriageSidebar({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const [sp, aiEnabled] = await Promise.all([searchParams, getAiEnabled()]);
+  const currentTriage = sp.triage ?? "";
+
+  return (
+    <aside className="w-48 shrink-0">
+      <div className="sticky top-40 bg-surface rounded-xl border border-border p-4">
+        <div className="mb-3">
+          <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
+        </div>
+
+        {aiEnabled ? (
+          <nav className="flex flex-col gap-0.5">
+            <a
+              href={filterHref(sp, "triage", "")}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors ${
+                currentTriage === ""
+                  ? "bg-brand/10 text-brand font-medium"
+                  : "text-muted hover:text-foreground hover:bg-border/40"
+              }`}
+            >
+              All
+            </a>
+            {TRIAGE_LEVELS_ORDERED.map((t) => {
+              const active = currentTriage === t;
+              return (
+                <a
+                  key={t}
+                  href={filterHref(sp, "triage", t)}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-colors ${
+                    active
+                      ? `${triageStyles(t)} font-medium`
+                      : "text-muted hover:text-foreground hover:bg-border/40"
+                  }`}
+                >
+                  <span className={active ? "" : triageColor(t)}>
+                    <TriageIcon level={t} size={13} />
+                  </span>
+                  {triageLabel(t)}
+                </a>
+              );
+            })}
+          </nav>
+        ) : (
+          <p className="text-xs text-muted/50 leading-relaxed">
+            Enable AI triage to filter bookings by urgency level.
+          </p>
+        )}
+
+        {aiEnabled && (
+          <p className="text-xs text-muted/50 mt-4 leading-relaxed">
+            AI-generated from patient-reported symptoms. Not reviewed by a clinician.
+          </p>
+        )}
+      </div>
+    </aside>
+  );
+}
+
 export default function AdminPage(props: PageProps<"/admin">) {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-10 bg-background border-b border-border">
-        <div className="max-w-4xl mx-auto w-full px-4">
+        <div className="max-w-5xl mx-auto w-full px-4">
           <Suspense
             fallback={
               <div className="py-4">
@@ -154,17 +215,25 @@ export default function AdminPage(props: PageProps<"/admin">) {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto w-full px-4 pt-44 pb-12">
-        <Suspense
-          fallback={
-            <div className="flex flex-col gap-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
-              ))}
-            </div>
-          }
-        >
-          <BookingsTable
+      <div className="max-w-5xl mx-auto w-full px-4 pt-40 pb-12 flex gap-6">
+        <div className="flex-1 min-w-0">
+          <Suspense
+            fallback={
+              <div className="flex flex-col gap-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
+                ))}
+              </div>
+            }
+          >
+            <BookingsTable
+              searchParams={props.searchParams as Promise<Record<string, string>>}
+            />
+          </Suspense>
+        </div>
+
+        <Suspense fallback={null}>
+          <TriageSidebar
             searchParams={props.searchParams as Promise<Record<string, string>>}
           />
         </Suspense>
@@ -178,19 +247,16 @@ async function Filters({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const [sp, aiEnabled, physicianRows] = await Promise.all([
+  const [sp, physicianRows] = await Promise.all([
     searchParams,
-    getAiEnabled(),
     db.select({ id: physicians.id, name: physicians.name }).from(physicians).orderBy(physicians.name),
   ]);
 
   const currentStatus = sp.status ?? "";
-  const currentTriage = sp.triage ?? "";
   const currentPhysician = sp.physician ?? "";
 
   return (
-    <div className="flex flex-col gap-2 pb-4">
-      {/* Status + Physician + Refresh */}
+    <div className="pb-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-2 flex-wrap">
           {(["", ...STATUSES] as const).map((s) => (
@@ -209,39 +275,6 @@ async function Filters({
         </div>
         <PhysicianSelect physicians={physicianRows} current={currentPhysician} />
       </div>
-
-      {aiEnabled && (
-        <div className="flex items-center gap-2 flex-wrap bg-surface border border-border rounded-lg px-3 py-2">
-          <span className="text-xs text-muted/60 uppercase tracking-wide">AI triage</span>
-          <a
-            href={filterHref(sp, "triage", "")}
-            className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors border ${
-              currentTriage === ""
-                ? "bg-brand text-brand-fg border-transparent"
-                : "bg-background border-border text-muted hover:text-foreground hover:border-brand"
-            }`}
-          >
-            All
-          </a>
-          {TRIAGE_LEVELS_ORDERED.map((t) => {
-            const active = currentTriage === t;
-            return (
-              <a
-                key={t}
-                href={filterHref(sp, "triage", t)}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors border ${
-                  active
-                    ? triageStyles(t as TriageLevel)
-                    : "bg-background border-border text-muted hover:text-foreground hover:border-brand"
-                }`}
-              >
-                <TriageIcon level={t as TriageLevel} size={9} />
-                {triageLabel(t as TriageLevel)}
-              </a>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

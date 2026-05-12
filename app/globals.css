@@ -29,3 +29,8 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+@keyframes orb-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
