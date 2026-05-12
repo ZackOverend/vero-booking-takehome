@@ -12,6 +12,7 @@
 }
 
 @theme inline {
+  --breakpoint-xs: 480px;
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-border: var(--border);

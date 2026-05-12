@@ -140,7 +140,7 @@ The structure is **emergent** — do not create directories speculatively. Add f
 app/
 ├── layout.tsx              ← root layout, fonts
 ├── page.tsx                ← redirect to /book
-├── globals.css             ← Tailwind import + @theme tokens
+├── globals.css             ← Tailwind import + @theme tokens (custom `xs` 480px breakpoint, `orb-pulse` keyframe)
 ├── _components/
 │   └── BackLink.tsx
 ├── book/
@@ -157,7 +157,7 @@ app/
 └── admin/
     ├── page.tsx            ← booking management dashboard
     ├── login/page.tsx
-    └── _components/        ← BookingRow, AiToggle, TriageIcon, PhysicianSelect, RefreshButton
+    └── _components/        ← BookingRow, AiToggle, TriageIcon, PhysicianSelect, RefreshButton, MobileFilterBar
 proxy.ts                    ← admin auth gate (/admin/:path* except /admin/login)
 ```
 
@@ -205,7 +205,7 @@ lib/
 │   ├── client.ts           ← Ollama Cloud client setup
 │   └── triage.ts           ← isSafetyFlag, classifyTriage
 ├── booking-suggestions.ts  ← specialty → reason chip suggestions (patient form)
-└── utils.ts                ← statusStyles, triageStyles, triageLabel, triageBorder, triageColor
+└── utils.ts                ← statusStyles, triageStyles, triageLabel, triageBorder, triageColor, TRIAGE_LEVELS_ORDERED
 ```
 
 Data-access functions (reads) live in `lib/actions/` too, exported without `'use server'` unless called from a Client Component.
@@ -234,6 +234,14 @@ Step state is passed forward via URL search params or hidden form inputs, not `l
 - Triage filter is ignored in DB queries when AI is disabled — prevents stale `?triage=` params filtering results.
 - Confirm/cancel inline via Server Functions bound to form `action`
 - Click any row (or chevron) to expand full patient detail. `select-none` on row prevents text highlight; expanded panel restores `select-text`.
+
+### Mobile layout (`< lg`)
+- Fixed header shows title + Refresh + Sign out only (no filter row)
+- Single column layout — sidebar hidden
+- `MobileFilterBar` (client component): floating frosted-glass pill pinned to bottom (`bottom-4 left-2 right-2`), contains status segmented tabs + physician dropdown + AI orb
+- AI orb: gradient when enabled (tap opens triage picker popover), grey when disabled (tap enables AI). `useTransition` for pending state. Syncs with desktop via `useEffect` on `aiEnabled` prop.
+- Status labels abbreviate below `xs` (480px): Pend / Conf / Canc
+- Bottom gradient fade (`h-32 bg-gradient-to-t`) behind the bar for visual separation
 
 ### Admin auth
 

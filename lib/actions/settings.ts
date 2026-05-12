@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { settings } from "@/lib/db/schema";
 import { revalidatePath, revalidateTag, cacheTag, cacheLife } from "next/cache";
+import { sql } from "drizzle-orm";
 
 export async function getAiEnabled(): Promise<boolean> {
   "use cache";
@@ -15,12 +16,12 @@ export async function getAiEnabled(): Promise<boolean> {
 }
 
 export async function toggleAi() {
-  const [row] = await db.select().from(settings).limit(1);
+  const [updated] = await db
+    .update(settings)
+    .set({ aiEnabled: sql`NOT ${settings.aiEnabled}` })
+    .returning({ aiEnabled: settings.aiEnabled });
 
-  if (row) {
-    await db.update(settings).set({ aiEnabled: !row.aiEnabled });
-  } else {
-    // First toggle — create the row with the opposite of the env default
+  if (!updated) {
     const envDefault = process.env.AI_ENABLED === "true";
     await db.insert(settings).values({ aiEnabled: !envDefault });
   }

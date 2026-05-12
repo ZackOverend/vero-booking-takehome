@@ -1,5 +1,9 @@
 import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
 
+export const TRIAGE_LEVELS_ORDERED: TriageLevel[] = [
+  "safety_flag", "urgent", "soon", "routine", "administrative",
+];
+
 export function statusStyles(status: BookingStatus): string {
   switch (status) {
     case "pending":

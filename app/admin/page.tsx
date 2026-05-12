@@ -7,16 +7,16 @@ import { triageLevelEnum } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
-import { triageLabel, triageColor, triageStyles } from "@/lib/utils";
+import { triageLabel, triageColor, triageStyles, TRIAGE_LEVELS_ORDERED } from "@/lib/utils";
 import BookingRow from "./_components/BookingRow";
 import AiToggle from "./_components/AiToggle";
 import PhysicianSelect from "./_components/PhysicianSelect";
 import TriageIcon from "./_components/TriageIcon";
 import RefreshButton from "./_components/RefreshButton";
+import MobileFilterBar from "./_components/MobileFilterBar";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled"];
 const TRIAGE_LEVELS = triageLevelEnum.enumValues;
-const TRIAGE_LEVELS_ORDERED: TriageLevel[] = ["safety_flag", "urgent", "soon", "routine", "administrative"];
 
 function filterHref(sp: Record<string, string>, key: string, value: string) {
   const params = new URLSearchParams(sp);
@@ -129,7 +129,7 @@ async function TriageSidebar({
   const currentTriage = sp.triage ?? "";
 
   return (
-    <aside className="w-full lg:w-48 shrink-0">
+    <aside className="hidden lg:block lg:w-48 shrink-0">
       <div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4">
         <div className="mb-3">
           <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
@@ -199,23 +199,25 @@ export default function AdminPage(props: PageProps<"/admin">) {
             <AdminHeader />
           </Suspense>
 
-          <Suspense
-            fallback={
-              <div className="flex gap-2 pb-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
-                ))}
-              </div>
-            }
-          >
-            <Filters
-              searchParams={props.searchParams as Promise<Record<string, string>>}
-            />
-          </Suspense>
+          <div className="hidden lg:block">
+            <Suspense
+              fallback={
+                <div className="flex gap-2 pb-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
+                  ))}
+                </div>
+              }
+            >
+              <Filters
+                searchParams={props.searchParams as Promise<Record<string, string>>}
+              />
+            </Suspense>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full px-4 pt-40 pb-12 flex flex-col lg:flex-row gap-6">
+      <div className="max-w-5xl mx-auto w-full px-4 pt-24 lg:pt-40 pb-28 lg:pb-12 flex flex-col lg:flex-row gap-6">
         <div className="flex-1 min-w-0">
           <Suspense
             fallback={
@@ -232,12 +234,26 @@ export default function AdminPage(props: PageProps<"/admin">) {
           </Suspense>
         </div>
 
-        <Suspense fallback={<aside className="w-full lg:w-48 shrink-0"><div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4 h-48 animate-pulse" /></aside>}>
+        <Suspense fallback={<aside className="hidden lg:block lg:w-48 shrink-0"><div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4 h-48 animate-pulse" /></aside>}>
           <TriageSidebar
             searchParams={props.searchParams as Promise<Record<string, string>>}
           />
         </Suspense>
       </div>
+
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+
+      <Suspense fallback={
+        <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background/80 backdrop-blur-md border border-border rounded-2xl shadow-lg">
+          <div className="flex items-center gap-2 px-3 py-3">
+            <div className="flex-1 h-8 rounded-lg bg-surface animate-pulse" />
+            <div className="w-32 h-8 rounded-lg bg-surface animate-pulse" />
+            <div className="w-8 h-8 rounded-full bg-surface animate-pulse shrink-0" />
+          </div>
+        </div>
+      }>
+        <MobileFiltersWrapper />
+      </Suspense>
     </>
   );
 }
@@ -277,4 +293,13 @@ async function Filters({
       </div>
     </div>
   );
+}
+
+async function MobileFiltersWrapper() {
+  const [aiEnabled, physicianRows] = await Promise.all([
+    getAiEnabled(),
+    db.select({ id: physicians.id, name: physicians.name }).from(physicians).orderBy(physicians.name),
+  ]);
+
+  return <MobileFilterBar physicians={physicianRows} aiEnabled={aiEnabled} toggleAction={toggleAi} />;
 }
