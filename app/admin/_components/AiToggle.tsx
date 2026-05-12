@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AiToggle({
   enabled,
@@ -9,6 +10,7 @@ export default function AiToggle({
   enabled: boolean;
   toggleAction: () => Promise<void>;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [optimisticEnabled, setOptimisticEnabled] = useOptimistic(enabled);
 
@@ -16,6 +18,7 @@ export default function AiToggle({
     startTransition(async () => {
       setOptimisticEnabled(!optimisticEnabled);
       await toggleAction();
+      router.refresh();
     });
   }
 
