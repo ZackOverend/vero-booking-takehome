@@ -154,13 +154,10 @@ app/
 │           └── _components/DetailsForm.tsx
 ├── confirmation/
 │   └── page.tsx            ← booking confirmed (reference #)
-├── api/
-│   └── admin/
-│           └── route.ts
 └── admin/
     ├── page.tsx            ← booking management dashboard
     ├── login/page.tsx
-    └── _components/        ← BookingRow, AiToggle, LiveRefresh, TriageIcon
+    └── _components/        ← BookingRow, AiToggle, LiveRefresh, TriageIcon, PhysicianSelect
 proxy.ts                    ← admin auth gate (/admin/:path* except /admin/login)
 ```
 
@@ -207,7 +204,8 @@ lib/
 ├── ai/
 │   ├── client.ts           ← Ollama Cloud client setup
 │   └── triage.ts           ← isSafetyFlag, classifyTriage
-└── utils.ts                ← statusStyles, triageStyles, triageLabel, triageBorder
+├── booking-suggestions.ts  ← specialty → reason chip suggestions (patient form)
+└── utils.ts                ← statusStyles, triageStyles, triageLabel, triageBorder, triageColor
 ```
 
 Data-access functions (reads) live in `lib/actions/` too, exported without `'use server'` unless called from a Client Component.
@@ -229,9 +227,9 @@ Step state is passed forward via URL search params or hidden form inputs, not `l
 
 `/admin` — single page, server-rendered table of all bookings.
 
-- Filter by status (`pending` / `confirmed` / `cancelled`) via URL search param
-- Confirm/cancel inline via Server Actions bound to `<button formAction={...}>`
-- Expand row to see full patient detail (Client Component toggle)
+- Filter by status (`pending` / `confirmed` / `cancelled`), physician, and AI triage level via URL search params (`?status=`, `?physician=<id>`, `?triage=<level>`). Triage filter only shown when AI is enabled.
+- Confirm/cancel inline via Server Functions bound to form `action`
+- Click any row (or chevron) to expand full patient detail. `select-none` on row prevents text highlight; expanded panel restores `select-text`.
 
 ### Admin auth
 
@@ -449,5 +447,4 @@ const model = ollama(process.env.OLLAMA_MODEL ?? "gemma4:31b");
 - Rate limiting on `createBooking` action
 - Real-time admin updates: current polling (`router.refresh()` every 10s) is acceptable for low-traffic clinics. Production path is Postgres `LISTEN/NOTIFY` with the WebSocket Pool driver + SSE, but Vercel serverless function timeouts kill the persistent connection — requires a long-lived Node.js server or managed pub/sub (Ably, Pusher)
 - Physician self-service portal (`/physician`): physicians manage their own slot availability — add ad-hoc slots, block time off. Needs its own auth layer (physician ID + PIN or magic link) scoped so a physician can only modify their own slots. Key constraints: cannot remove a slot with a confirmed booking against it; recurring availability templates ("Mon/Wed 9am–1pm") would be more practical than slot-by-slot management. Data layer (`time_slots.physician_id`, `time_slots.available`) already supports this without schema changes.
-- Admin/physician filtering: `?physician=<id>` and `?triage=<level>` search params on `/admin`, with triage filter row conditionally shown when AI is enabled.
 - Streaming clinical summary in admin booking details: on-demand AI-generated one-sentence summary of the patient's reason for visit, streamed via Vercel AI SDK `streamText` into the expanded row. Descoped — triage badge already surfaces the actionable signal; the summary is redundant for low-volume clinical use.

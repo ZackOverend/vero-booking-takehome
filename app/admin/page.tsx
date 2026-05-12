@@ -1,16 +1,32 @@
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { bookings, timeSlots, physicians } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
+import { triageLevelEnum } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
+import { triageLabel, triageStyles } from "@/lib/utils";
 import BookingRow from "./_components/BookingRow";
 import LiveRefresh from "./_components/LiveRefresh";
 import AiToggle from "./_components/AiToggle";
+import PhysicianSelect from "./_components/PhysicianSelect";
+import TriageIcon from "./_components/TriageIcon";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled"];
+const TRIAGE_LEVELS = triageLevelEnum.enumValues;
+
+function filterHref(sp: Record<string, string>, key: string, value: string) {
+  const params = new URLSearchParams(sp);
+  if (value) {
+    params.set(key, value);
+  } else {
+    params.delete(key);
+  }
+  const qs = params.toString();
+  return qs ? `/admin?${qs}` : "/admin";
+}
 
 async function BookingsTable({
   searchParams,
@@ -21,9 +37,14 @@ async function BookingsTable({
     searchParams,
     getAiEnabled(),
   ]);
-  const filter = STATUSES.includes(sp.status as BookingStatus)
+
+  const statusFilter = STATUSES.includes(sp.status as BookingStatus)
     ? (sp.status as BookingStatus)
     : null;
+  const triageFilter = TRIAGE_LEVELS.includes(sp.triage as TriageLevel)
+    ? (sp.triage as TriageLevel)
+    : null;
+  const physicianFilter = sp.physician ?? null;
 
   const rows = await db
     .select({
@@ -45,14 +66,20 @@ async function BookingsTable({
     .from(bookings)
     .innerJoin(timeSlots, eq(bookings.slotId, timeSlots.id))
     .innerJoin(physicians, eq(timeSlots.physicianId, physicians.id))
-    .where(filter ? eq(bookings.status, filter) : undefined)
+    .where(and(
+      statusFilter ? eq(bookings.status, statusFilter) : undefined,
+      triageFilter ? eq(bookings.triageLevel, triageFilter) : undefined,
+      physicianFilter ? eq(physicians.id, physicianFilter) : undefined,
+    ))
     .orderBy(desc(bookings.createdAt));
+
+  const hasFilters = !!(statusFilter || triageFilter || physicianFilter);
 
   return (
     <div className="w-full rounded-xl border border-border">
       {rows.length === 0 ? (
         <p className="text-muted text-sm py-12 text-center">
-          No bookings{filter ? ` with status "${filter}"` : ""}.
+          No bookings{hasFilters ? " matching the selected filters" : ""}.
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
@@ -111,14 +138,16 @@ export default function AdminPage(props: PageProps<"/admin">) {
 
       <Suspense
         fallback={
-          <div className="flex gap-2 mb-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
-            ))}
+          <div className="flex flex-col gap-3 mb-6">
+            <div className="flex gap-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
+              ))}
+            </div>
           </div>
         }
       >
-        <StatusFilter
+        <Filters
           searchParams={props.searchParams as Promise<Record<string, string>>}
         />
       </Suspense>
@@ -144,29 +173,75 @@ export default function AdminPage(props: PageProps<"/admin">) {
   );
 }
 
-async function StatusFilter({
+async function Filters({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const sp = await searchParams;
-  const current = sp.status ?? "";
+  const [sp, aiEnabled, physicianRows] = await Promise.all([
+    searchParams,
+    getAiEnabled(),
+    db.select({ id: physicians.id, name: physicians.name }).from(physicians).orderBy(physicians.name),
+  ]);
+
+  const currentStatus = sp.status ?? "";
+  const currentTriage = sp.triage ?? "";
+  const currentPhysician = sp.physician ?? "";
 
   return (
-    <div className="flex gap-2 mb-6">
-      {(["", ...STATUSES] as const).map((s) => (
-        <a
-          key={s}
-          href={s ? `/admin?status=${s}` : "/admin"}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-center min-w-24 ${
-            current === s
-              ? "bg-brand text-brand-fg border border-transparent"
-              : "bg-surface border border-border text-muted hover:text-foreground hover:border-brand"
-          }`}
-        >
-          {s === "" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-        </a>
-      ))}
+    <div className="flex flex-col gap-3 mb-6">
+      {/* Status + Physician */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {(["", ...STATUSES] as const).map((s) => (
+            <a
+              key={s}
+              href={filterHref(sp, "status", s)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-center min-w-24 ${
+                currentStatus === s
+                  ? "bg-brand text-brand-fg border border-transparent"
+                  : "bg-surface border border-border text-muted hover:text-foreground hover:border-brand"
+              }`}
+            >
+              {s === "" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+            </a>
+          ))}
+        </div>
+        <PhysicianSelect physicians={physicianRows} current={currentPhysician} />
+      </div>
+
+      {aiEnabled && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">AI triage</span>
+          <a
+            href={filterHref(sp, "triage", "")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+              currentTriage === ""
+                ? "bg-brand text-brand-fg border-transparent"
+                : "bg-surface border-border text-muted hover:text-foreground hover:border-brand"
+            }`}
+          >
+            All
+          </a>
+          {TRIAGE_LEVELS.map((t) => {
+            const active = currentTriage === t;
+            return (
+              <a
+                key={t}
+                href={filterHref(sp, "triage", t)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+                  active
+                    ? triageStyles(t as TriageLevel)
+                    : "bg-surface border-border text-muted hover:text-foreground hover:border-brand"
+                }`}
+              >
+                {active && <TriageIcon level={t as TriageLevel} size={11} />}
+                {triageLabel(t as TriageLevel)}
+              </a>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

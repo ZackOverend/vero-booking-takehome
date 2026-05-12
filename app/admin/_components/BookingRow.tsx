@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
-import { statusStyles, triageStyles, triageLabel, triageBorder } from "@/lib/utils";
+import { statusStyles, triageColor, triageBorder } from "@/lib/utils";
 import TriageIcon from "./TriageIcon";
 
 type Booking = {
@@ -59,23 +59,22 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
   });
 
   return (
-    <li className="px-5 py-4">
+    <li className="pl-3 pr-5 py-4 cursor-pointer select-none" onClick={() => setExpanded((prev) => !prev)}>
       <div className="flex items-start justify-between gap-4">
         {aiEnabled && booking.triageLevel && (
-          <div className={`w-1 self-stretch rounded-full shrink-0 ${triageBorder(booking.triageLevel)}`} />
+          <div className="flex items-center gap-3 self-stretch shrink-0">
+            <span className={triageColor(booking.triageLevel)}>
+              <TriageIcon level={booking.triageLevel} size={20} />
+            </span>
+            <div className={`w-1 self-stretch rounded-full ${triageBorder(booking.triageLevel)}`} />
+          </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-medium text-foreground">{booking.patientName}</span>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusStyles(booking.status)}`}>
-              {booking.status}
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
             </span>
-            {aiEnabled && booking.triageLevel && (
-              <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${triageStyles(booking.triageLevel)}`}>
-                <TriageIcon level={booking.triageLevel} size={10} />
-                {triageLabel(booking.triageLevel)}
-              </span>
-            )}
+            <span className="font-medium text-foreground">{booking.patientName}</span>
             <span className="font-mono text-xs text-muted">{booking.reference}</span>
           </div>
           <p className="text-sm text-muted mt-0.5">
@@ -85,7 +84,7 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
 
         <div className="flex items-center justify-end gap-2 shrink-0 w-52">
           {booking.status === "pending" && (
-            <form action={() => updateStatusAction(booking.id, "confirmed")}>
+            <form action={() => updateStatusAction(booking.id, "confirmed")} onClick={(e) => e.stopPropagation()}>
               <button
                 type="submit"
                 className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand text-brand-fg hover:bg-brand-hover transition-colors"
@@ -95,7 +94,7 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
             </form>
           )}
           {booking.status !== "cancelled" && (
-            <form action={() => updateStatusAction(booking.id, "cancelled")}>
+            <form action={() => updateStatusAction(booking.id, "cancelled")} onClick={(e) => e.stopPropagation()}>
               <button
                 type="submit"
                 className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors"
@@ -105,16 +104,30 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
             </form>
           )}
           <button
-            onClick={() => setExpanded((e) => !e)}
-            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:text-foreground hover:border-brand transition-colors"
+            onClick={(e) => { e.stopPropagation(); setExpanded((prev) => !prev); }}
+            className={`p-1.5 rounded-lg text-muted hover:text-foreground transition-colors ${expanded ? "text-foreground" : ""}`}
+            aria-label={expanded ? "Collapse" : "Expand"}
           >
-            {expanded ? "Hide" : "Details"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width={16}
+              height={16}
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+            >
+              <path d="M3 6l5 5 5-5" />
+            </svg>
           </button>
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm bg-surface rounded-xl px-4 py-4 border border-border">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm bg-surface rounded-xl px-5 py-4 border border-border select-text" onClick={(e) => e.stopPropagation()}>
           <DetailField label="Email" value={booking.email} />
           <DetailField label="Phone" value={booking.phone} />
           <DetailField label="Date of birth" value={booking.dob} />
