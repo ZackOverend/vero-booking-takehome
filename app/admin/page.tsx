@@ -244,7 +244,7 @@ export default function AdminPage(props: PageProps<"/admin">) {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
 
       <Suspense fallback={
-        <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background/80 backdrop-blur-md border border-border rounded-2xl shadow-lg">
+        <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background border border-border rounded-2xl shadow-lg">
           <div className="flex items-center gap-2 px-3 py-3">
             <div className="flex-1 h-8 rounded-lg bg-surface animate-pulse" />
             <div className="w-32 h-8 rounded-lg bg-surface animate-pulse" />

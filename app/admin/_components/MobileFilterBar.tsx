@@ -52,7 +52,7 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
         <div className="lg:hidden fixed inset-0 z-10" onClick={() => setTriageOpen(false)} />
       )}
 
-      <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background/80 backdrop-blur-md border border-border rounded-2xl shadow-lg">
+      <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background border border-border rounded-2xl shadow-lg">
         {/* Triage popover */}
         {optimisticEnabled && triageOpen && (
           <div className="absolute bottom-full right-4 mb-2 z-20 bg-background border border-border rounded-xl shadow-lg p-2 w-44">
