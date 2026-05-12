@@ -69,7 +69,11 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
     day: "numeric",
     year: "numeric",
   });
-  const age = Math.floor((new Date().getTime() - new Date(booking.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  const dob = new Date(booking.dob);
+  const today = new Date(booking.createdAt);
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
 
   return (
     <li className="pl-3 pr-5 py-4 cursor-pointer select-none" onClick={() => setExpanded((prev) => !prev)}>
