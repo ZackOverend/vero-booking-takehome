@@ -16,6 +16,7 @@ import RefreshButton from "./_components/RefreshButton";
 
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "cancelled"];
 const TRIAGE_LEVELS = triageLevelEnum.enumValues;
+const TRIAGE_LEVELS_ORDERED: TriageLevel[] = ["safety_flag", "urgent", "soon", "routine", "administrative"];
 
 function filterHref(sp: Record<string, string>, key: string, value: string) {
   const params = new URLSearchParams(sp);
@@ -100,10 +101,10 @@ async function BookingsTable({
 async function AdminHeader() {
   const aiEnabled = await getAiEnabled();
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="flex items-center justify-between pt-5 pb-3">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
-        <p className="text-muted text-sm mt-1">Manage patient appointments</p>
+        <p className="text-muted text-sm mt-0.5">Manage patient appointments</p>
       </div>
       <div className="flex items-center gap-4">
         <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
@@ -123,53 +124,52 @@ async function AdminHeader() {
 
 export default function AdminPage(props: PageProps<"/admin">) {
   return (
-    <div className="max-w-4xl mx-auto w-full px-4 py-12">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
-              <p className="text-muted text-sm mt-1">Manage patient appointments</p>
-            </div>
-          </div>
-        }
-      >
-        <AdminHeader />
-      </Suspense>
+    <>
+      <div className="fixed top-0 left-0 right-0 z-10 bg-background border-b border-border">
+        <div className="max-w-4xl mx-auto w-full px-4">
+          <Suspense
+            fallback={
+              <div className="py-4">
+                <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
+                <p className="text-muted text-sm mt-0.5">Manage patient appointments</p>
+              </div>
+            }
+          >
+            <AdminHeader />
+          </Suspense>
 
-      <Suspense
-        fallback={
-          <div className="flex flex-col gap-3 mb-6">
-            <div className="flex gap-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
+          <Suspense
+            fallback={
+              <div className="flex gap-2 pb-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
+                ))}
+              </div>
+            }
+          >
+            <Filters
+              searchParams={props.searchParams as Promise<Record<string, string>>}
+            />
+          </Suspense>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto w-full px-4 pt-44 pb-12">
+        <Suspense
+          fallback={
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
               ))}
             </div>
-          </div>
-        }
-      >
-        <Filters
-          searchParams={props.searchParams as Promise<Record<string, string>>}
-        />
-      </Suspense>
-
-      <Suspense
-        fallback={
-          <div className="flex flex-col gap-3 mt-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-16 rounded-xl bg-surface animate-pulse"
-              />
-            ))}
-          </div>
-        }
-      >
-        <BookingsTable
-          searchParams={props.searchParams as Promise<Record<string, string>>}
-        />
-      </Suspense>
-    </div>
+          }
+        >
+          <BookingsTable
+            searchParams={props.searchParams as Promise<Record<string, string>>}
+          />
+        </Suspense>
+      </div>
+    </>
   );
 }
 
@@ -189,7 +189,7 @@ async function Filters({
   const currentPhysician = sp.physician ?? "";
 
   return (
-    <div className="flex flex-col gap-3 mb-6">
+    <div className="flex flex-col gap-2 pb-4">
       {/* Status + Physician + Refresh */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex gap-2 flex-wrap">
@@ -211,31 +211,31 @@ async function Filters({
       </div>
 
       {aiEnabled && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">AI triage</span>
+        <div className="flex items-center gap-2 flex-wrap bg-surface border border-border rounded-lg px-3 py-2">
+          <span className="text-xs text-muted/60 uppercase tracking-wide">AI triage</span>
           <a
             href={filterHref(sp, "triage", "")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+            className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors border ${
               currentTriage === ""
                 ? "bg-brand text-brand-fg border-transparent"
-                : "bg-surface border-border text-muted hover:text-foreground hover:border-brand"
+                : "bg-background border-border text-muted hover:text-foreground hover:border-brand"
             }`}
           >
             All
           </a>
-          {TRIAGE_LEVELS.map((t) => {
+          {TRIAGE_LEVELS_ORDERED.map((t) => {
             const active = currentTriage === t;
             return (
               <a
                 key={t}
                 href={filterHref(sp, "triage", t)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors border ${
                   active
                     ? triageStyles(t as TriageLevel)
-                    : "bg-surface border-border text-muted hover:text-foreground hover:border-brand"
+                    : "bg-background border-border text-muted hover:text-foreground hover:border-brand"
                 }`}
               >
-                {active && <TriageIcon level={t as TriageLevel} size={11} />}
+                <TriageIcon level={t as TriageLevel} size={9} />
                 {triageLabel(t as TriageLevel)}
               </a>
             );
