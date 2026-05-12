@@ -163,6 +163,7 @@ export default function DetailsForm({
           </Field>
 
           <Field id={id("phone")} label="Phone" error={fe?.phone?.[0]}>
+            <div className="relative">
             <input
               id={id("phone")}
               name="phone"
@@ -171,8 +172,21 @@ export default function DetailsForm({
               autoComplete="tel"
               value={fields.phone}
               onChange={(e) => setFields((f) => ({ ...f, phone: formatPhone(e.target.value) }))}
-              className={input}
+              className={`${input} pr-8`}
             />
+            {fields.phone && (
+              <button
+                type="button"
+                onClick={() => setFields((f) => ({ ...f, phone: "" }))}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors cursor-pointer"
+                aria-label="Clear phone"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width={10} height={10} viewBox="0 0 640 640" fill="currentColor">
+                  <path d="M504.6 148.5C515.9 134.9 514.1 114.7 500.5 103.4C486.9 92.1 466.7 93.9 455.4 107.5L320 270L184.6 107.5C173.3 93.9 153.1 92.1 139.5 103.4C125.9 114.7 124.1 134.9 135.4 148.5L278.3 320L135.4 491.5C124.1 505.1 125.9 525.3 139.5 536.6C153.1 547.9 173.3 546.1 184.6 532.5L320 370L455.4 532.5C466.7 546.1 486.9 547.9 500.5 536.6C514.1 525.3 515.9 505.1 504.6 491.5L361.7 320L504.6 148.5z"/>
+                </svg>
+              </button>
+            )}
+            </div>
           </Field>
         </div>
 

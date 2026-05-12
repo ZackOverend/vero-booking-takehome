@@ -134,13 +134,13 @@ export default function MobileFilterBar({
 
         <div className="flex items-center gap-2 px-3 py-3">
           {/* Status segmented tabs */}
-          <div className="flex flex-1 items-center bg-surface border border-border rounded-lg p-0.5">
+          <div className="flex flex-1 items-center gap-1.5">
             {STATUSES.map((s) => (
               <button
                 key={s}
                 onClick={() => toggleStatus(s)}
-                className={`flex-1 text-center text-xs font-medium py-1 rounded-md transition-colors ${
-                  activeStatuses.includes(s) ? "bg-brand text-brand-fg" : "text-muted"
+                className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg border transition-colors ${
+                  activeStatuses.includes(s) ? "bg-brand text-brand-fg border-transparent" : "bg-surface border-border text-muted"
                 }`}
               >
                 <span className="xs:hidden">{STATUS_LABELS[s]}</span>

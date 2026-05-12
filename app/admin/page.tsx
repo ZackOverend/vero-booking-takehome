@@ -125,13 +125,15 @@ async function BookingsTable({
 
 function AdminHeader() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 pt-5 pb-3">
+    <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 pt-3 pb-2">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
+          <RefreshButton />
+        </div>
         <p className="text-muted text-sm mt-0.5">Manage patient appointments</p>
       </div>
       <div className="flex items-center gap-4">
-        <RefreshButton />
         <Link href="/book" className="text-sm text-muted hover:text-foreground transition-colors">
           Patient View
         </Link>
@@ -255,7 +257,7 @@ export default function AdminPage(props: PageProps<"/admin">) {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full px-4 pt-24 lg:pt-40 pb-28 lg:pb-12 flex flex-col lg:flex-row gap-6">
+      <div className="max-w-5xl mx-auto w-full px-4 pt-28 xs:pt-20 lg:pt-40 pb-28 lg:pb-12 flex flex-col lg:flex-row gap-6">
         <div className="flex-1 min-w-0">
           <Suspense
             fallback={

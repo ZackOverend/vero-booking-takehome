@@ -227,18 +227,19 @@ Step state is passed forward via URL search params or hidden form inputs, not `l
 
 `/admin` — two-column layout: bookings list (left, `flex-1`) + AI triage sidebar (right, `w-48`, sticky).
 
-- **Fixed header** — title, Refresh button, Sign out. Status filter pills + physician dropdown below in the same fixed bar.
-- **Status filter** — `?status=` URL param, pill tabs (All / Pending / Confirmed / Cancelled)
+- **Fixed header** — title + refresh icon inline, Patient View link, Sign out. Status filter toggles + physician dropdown below in the same fixed bar.
+- **Status filter** — `?status=` URL param, comma-separated multi-select (e.g. `?status=pending,confirmed`). Clicking all three clears back to no filter. A "Clear" link appears when any filter is active.
 - **Physician filter** — `?physician=<id>` URL param, dropdown select in the header bar
 - **AI triage sidebar** — always visible. `AiToggle` (orb indicator) at top toggles AI features. When enabled: triage filter nav (`?triage=<level>`) + disclaimer. When disabled: prompt to enable.
 - Triage filter is ignored in DB queries when AI is disabled — prevents stale `?triage=` params filtering results.
-- Confirm/cancel inline via Server Functions bound to form `action`
-- Click any row (or chevron) to expand full patient detail. `select-none` on row prevents text highlight; expanded panel restores `select-text`.
+- Confirm/cancel inline via Server Functions on desktop. On mobile, buttons are hidden from the collapsed row and appear in the expanded panel instead.
+- Click any row (or chevron) to expand full patient detail. `select-none` on row prevents text highlight; expanded panel restores `select-text` with `cursor-auto`.
+- Expanded panel shows email (mailto link icon) and phone (tel link icon) inline with labels, age calculated from DOB, copy-to-clipboard buttons on Reason and Notes with checkmark feedback.
 
 ### Mobile layout (`< lg`)
-- Fixed header shows title + Refresh + Sign out only (no filter row)
+- Fixed header shows title (with refresh icon) + Patient View + Sign out only (no filter row)
 - Single column layout — sidebar hidden
-- `MobileFilterBar` (client component): floating pill pinned to bottom (`bottom-4 left-2 right-2`), contains status segmented tabs + physician dropdown + AI orb
+- `MobileFilterBar` (client component): floating pill pinned to bottom (`bottom-4 left-2 right-2`), contains multi-select status toggles + physician dropdown + AI orb
 - AI orb: gradient when enabled (tap opens triage picker popover), grey when disabled (tap enables AI). `useTransition` for pending state. `key={String(aiEnabled)}` causes remount when server re-renders with new AI state — avoids `useEffect` setState anti-pattern.
 - Status labels abbreviate below `xs` (480px): Pend / Conf / Canc
 - Bottom gradient fade (`h-32 bg-gradient-to-t`) behind the bar for visual separation

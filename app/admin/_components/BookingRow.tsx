@@ -55,6 +55,10 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
     day: "numeric",
     year: "numeric",
   });
+  const apptDateStrShort = apptDate.toLocaleDateString("en-CA", {
+    month: "short",
+    day: "numeric",
+  });
   const apptTimeStr = apptDate.toLocaleTimeString("en-CA", {
     hour: "numeric",
     minute: "2-digit",
@@ -87,42 +91,51 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border w-20 text-center inline-block ${statusStyles(booking.status)}`}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </span>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full border w-20 text-center inline-block mb-1 ${statusStyles(booking.status)}`}>
+            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+          </span>
+          <div className="pl-1">
             <span className="font-medium text-foreground">{booking.patientName}</span>
-            <span className="font-mono text-xs text-muted">{booking.reference}</span>
+            <p className="text-sm text-muted mt-0.5">
+              <span className="xs:hidden">{`${booking.physicianName}`}</span>
+              <span className="hidden xs:inline">{`${booking.physicianName} · ${booking.specialty}`}</span>
+            </p>
+            <p className="flex items-center gap-1.5 text-sm text-muted mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width={11} height={11} fill="currentColor" className="shrink-0">
+                <path d="M224 64C206.3 64 192 78.3 192 96L192 128L160 128C124.7 128 96 156.7 96 192L96 240L544 240L544 192C544 156.7 515.3 128 480 128L448 128L448 96C448 78.3 433.7 64 416 64C398.3 64 384 78.3 384 96L384 128L256 128L256 96C256 78.3 241.7 64 224 64zM96 288L96 480C96 515.3 124.7 544 160 544L480 544C515.3 544 544 515.3 544 480L544 288L96 288z"/>
+              </svg>
+              <span className="xs:hidden">{`${apptDateStrShort} ${apptTimeStr}`}</span>
+              <span className="hidden xs:inline">{`${apptDateStr} at ${apptTimeStr}`}</span>
+            </p>
           </div>
-          <p className="text-sm text-muted mt-0.5">
-            {`${booking.physicianName} · ${booking.specialty} · ${apptDateStr} at ${apptTimeStr}`}
-          </p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 shrink-0 w-52">
-          {booking.status === "pending" && (
-            <form action={() => updateStatusAction(booking.id, "confirmed")} onClick={(e) => e.stopPropagation()} className="cursor-pointer">
-              <button
-                type="submit"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand text-brand-fg hover:bg-brand-hover transition-colors cursor-pointer"
-              >
-                Confirm
-              </button>
-            </form>
-          )}
-          {booking.status !== "cancelled" && (
-            <form action={() => updateStatusAction(booking.id, "cancelled")} onClick={(e) => e.stopPropagation()} className="cursor-pointer">
-              <button
-                type="submit"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-            </form>
-          )}
+        <div className="flex items-center justify-end gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2">
+            {booking.status === "pending" && (
+              <form action={() => updateStatusAction(booking.id, "confirmed")} onClick={(e) => e.stopPropagation()} className="cursor-pointer">
+                <button
+                  type="submit"
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg bg-brand text-brand-fg hover:bg-brand-hover transition-colors cursor-pointer"
+                >
+                  Confirm
+                </button>
+              </form>
+            )}
+            {booking.status !== "cancelled" && (
+              <form action={() => updateStatusAction(booking.id, "cancelled")} onClick={(e) => e.stopPropagation()} className="cursor-pointer">
+                <button
+                  type="submit"
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </form>
+            )}
+          </div>
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded((prev) => !prev); }}
-            className={`p-1.5 rounded-lg text-muted hover:text-foreground transition-colors cursor-pointer ${expanded ? "text-foreground" : ""}`}
+            className={`p-1.5 rounded-lg text-muted hover:text-foreground transition-colors cursor-pointer shrink-0 ${expanded ? "text-foreground" : ""}`}
             aria-label={expanded ? "Collapse" : "Expand"}
           >
             <svg
@@ -145,7 +158,7 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
 
       {expanded && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm bg-surface rounded-xl px-5 py-4 border border-border select-text cursor-auto" onClick={(e) => e.stopPropagation()}>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-1 mb-0.5">
               <p className="text-xs text-muted uppercase tracking-wide">Email</p>
               <a href={`mailto:${booking.email}`} className="text-muted hover:text-foreground transition-colors" aria-label="Send email">
@@ -154,9 +167,9 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
                 </svg>
               </a>
             </div>
-            <p className="text-foreground">{booking.email}</p>
+            <p className="text-foreground break-words">{booking.email}</p>
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-1 mb-0.5">
               <p className="text-xs text-muted uppercase tracking-wide">Phone</p>
               <a href={`tel:${booking.phone}`} className="text-muted hover:text-foreground transition-colors" aria-label="Call">
@@ -165,7 +178,7 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
                 </svg>
               </a>
             </div>
-            <p className="text-foreground">{booking.phone}</p>
+            <p className="text-foreground break-words">{booking.phone}</p>
           </div>
           <DetailField
             label="Date of birth"
@@ -216,8 +229,11 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
             </div>
           )}
           <DetailField label="Booked at" value={bookedAtStr} />
-          <div className="col-span-2 sm:col-span-3 pt-2 border-t border-border mt-1">
-            <p className="text-xs text-muted uppercase tracking-wide mb-1.5">Override status</p>
+          <div className="min-w-0">
+            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Reference</p>
+            <p className="text-foreground font-mono text-xs break-all">{booking.reference}</p>
+          </div>
+          <div className="col-span-2 sm:col-span-3 pt-2 border-t border-border mt-1 flex items-center gap-2 flex-wrap">
             <select
               value={booking.status}
               disabled={selectPending}
@@ -231,6 +247,22 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
               <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
             </select>
+            <div className="flex sm:hidden items-center gap-2">
+              {booking.status === "pending" && (
+                <form action={() => updateStatusAction(booking.id, "confirmed")} onClick={(e) => e.stopPropagation()} className="cursor-pointer">
+                  <button type="submit" className="text-xs font-medium px-3 py-2 rounded-lg bg-brand text-brand-fg hover:bg-brand-hover transition-colors cursor-pointer">
+                    Confirm
+                  </button>
+                </form>
+              )}
+              {booking.status !== "cancelled" && (
+                <form action={() => updateStatusAction(booking.id, "cancelled")} onClick={(e) => e.stopPropagation()} className="cursor-pointer">
+                  <button type="submit" className="text-xs font-medium px-3 py-2 rounded-lg border border-border text-muted hover:border-red-300 hover:text-red-600 transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}
