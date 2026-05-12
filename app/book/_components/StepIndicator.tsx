@@ -12,7 +12,7 @@ export default function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
           <div key={step} className="flex items-center">
             <div className="flex items-center gap-2">
               <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium shrink-0 transition-colors ${
                   done || active ? "bg-brand text-brand-fg" : "bg-border text-muted"
                 }`}
               >
@@ -37,7 +37,7 @@ export default function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
                 )}
               </span>
               <span
-                className={`text-sm ${active ? "text-foreground font-medium" : "text-muted"}`}
+                className={`hidden sm:inline text-sm ${active ? "text-foreground font-medium" : "text-muted"}`}
               >
                 {label}
               </span>

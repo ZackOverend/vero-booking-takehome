@@ -69,6 +69,7 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
     day: "numeric",
     year: "numeric",
   });
+  const age = Math.floor((new Date().getTime() - new Date(booking.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
   return (
     <li className="pl-3 pr-5 py-4 cursor-pointer select-none" onClick={() => setExpanded((prev) => !prev)}>
@@ -167,7 +168,7 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
                 </svg>
               </a>
             </div>
-            <p className="text-foreground break-words">{booking.email}</p>
+            <p className="text-foreground wrap-break-word">{booking.email}</p>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1 mb-0.5">
@@ -178,11 +179,11 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
                 </svg>
               </a>
             </div>
-            <p className="text-foreground break-words">{booking.phone}</p>
+            <p className="text-foreground wrap-break-word">{booking.phone}</p>
           </div>
           <DetailField
             label="Date of birth"
-            value={`${booking.dob} (age ${Math.floor((Date.now() - new Date(booking.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))})`}
+            value={`${booking.dob} (age ${age})`}
           />
           <div className="col-span-2 sm:col-span-3">
             <div className="flex items-center gap-1.5 mb-0.5">
@@ -229,11 +230,8 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
             </div>
           )}
           <DetailField label="Booked at" value={bookedAtStr} />
-          <div className="min-w-0">
-            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">Reference</p>
-            <p className="text-foreground font-mono text-xs break-all">{booking.reference}</p>
-          </div>
-          <div className="col-span-2 sm:col-span-3 pt-2 border-t border-border mt-1 flex items-center gap-2 flex-wrap">
+          <div className="col-span-2 sm:col-span-3 pt-2 border-t border-border mt-1 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
             <select
               value={booking.status}
               disabled={selectPending}
@@ -263,6 +261,8 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
                 </form>
               )}
             </div>
+            </div>
+            <span className="font-mono text-xs text-muted">{booking.reference}</span>
           </div>
         </div>
       )}

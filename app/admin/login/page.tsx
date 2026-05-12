@@ -16,7 +16,8 @@ export default function LoginPage() {
           </Link>
         </div>
         <h1 className="text-2xl font-semibold text-foreground mb-1">Admin</h1>
-        <p className="text-muted text-sm mb-8">Sign in to manage bookings.</p>
+        <p className="text-muted text-sm mb-1">Sign in to manage bookings.</p>
+        <p className="text-muted text-xs mb-8">Demo password: <span className="font-mono text-foreground">admin</span></p>
 
         <form action={formAction} className="flex flex-col gap-4">
           {state?.error && (
