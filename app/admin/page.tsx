@@ -7,7 +7,12 @@ import { triageLevelEnum } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
-import { triageLabel, triageColor, triageStyles, TRIAGE_LEVELS_ORDERED } from "@/lib/utils";
+import {
+  triageLabel,
+  triageColor,
+  triageStyles,
+  TRIAGE_LEVELS_ORDERED,
+} from "@/lib/utils";
 import BookingRow from "./_components/BookingRow";
 import AiToggle from "./_components/AiToggle";
 import PhysicianSelect from "./_components/PhysicianSelect";
@@ -34,17 +39,15 @@ async function BookingsTable({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const [sp, aiEnabled] = await Promise.all([
-    searchParams,
-    getAiEnabled(),
-  ]);
+  const [sp, aiEnabled] = await Promise.all([searchParams, getAiEnabled()]);
 
   const statusFilter = STATUSES.includes(sp.status as BookingStatus)
     ? (sp.status as BookingStatus)
     : null;
-  const triageFilter = aiEnabled && TRIAGE_LEVELS.includes(sp.triage as TriageLevel)
-    ? (sp.triage as TriageLevel)
-    : null;
+  const triageFilter =
+    aiEnabled && TRIAGE_LEVELS.includes(sp.triage as TriageLevel)
+      ? (sp.triage as TriageLevel)
+      : null;
   const physicianFilter = sp.physician ?? null;
 
   const rows = await db
@@ -67,11 +70,13 @@ async function BookingsTable({
     .from(bookings)
     .innerJoin(timeSlots, eq(bookings.slotId, timeSlots.id))
     .innerJoin(physicians, eq(timeSlots.physicianId, physicians.id))
-    .where(and(
-      statusFilter ? eq(bookings.status, statusFilter) : undefined,
-      triageFilter ? eq(bookings.triageLevel, triageFilter) : undefined,
-      physicianFilter ? eq(physicians.id, physicianFilter) : undefined,
-    ))
+    .where(
+      and(
+        statusFilter ? eq(bookings.status, statusFilter) : undefined,
+        triageFilter ? eq(bookings.triageLevel, triageFilter) : undefined,
+        physicianFilter ? eq(physicians.id, physicianFilter) : undefined,
+      ),
+    )
     .orderBy(desc(bookings.createdAt));
 
   const hasFilters = !!(statusFilter || triageFilter || physicianFilter);
@@ -175,7 +180,8 @@ async function TriageSidebar({
 
         {aiEnabled && (
           <p className="text-xs text-muted/50 mt-4 leading-relaxed">
-            AI-generated from patient-reported symptoms. Not reviewed by a clinician.
+            AI-generated from patient-reported symptoms. Not reviewed by a
+            clinician.
           </p>
         )}
       </div>
@@ -191,8 +197,12 @@ export default function AdminPage(props: PageProps<"/admin">) {
           <Suspense
             fallback={
               <div className="py-4">
-                <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
-                <p className="text-muted text-sm mt-0.5">Manage patient appointments</p>
+                <h1 className="text-2xl font-semibold text-foreground">
+                  Bookings
+                </h1>
+                <p className="text-muted text-sm mt-0.5">
+                  Manage patient appointments
+                </p>
               </div>
             }
           >
@@ -204,13 +214,18 @@ export default function AdminPage(props: PageProps<"/admin">) {
               fallback={
                 <div className="flex gap-2 pb-4">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-8 w-24 rounded-lg bg-surface animate-pulse" />
+                    <div
+                      key={i}
+                      className="h-8 w-24 rounded-lg bg-surface animate-pulse"
+                    />
                   ))}
                 </div>
               }
             >
               <Filters
-                searchParams={props.searchParams as Promise<Record<string, string>>}
+                searchParams={
+                  props.searchParams as Promise<Record<string, string>>
+                }
               />
             </Suspense>
           </div>
@@ -223,35 +238,48 @@ export default function AdminPage(props: PageProps<"/admin">) {
             fallback={
               <div className="flex flex-col gap-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-16 rounded-xl bg-surface animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-16 rounded-xl bg-surface animate-pulse"
+                  />
                 ))}
               </div>
             }
           >
             <BookingsTable
-              searchParams={props.searchParams as Promise<Record<string, string>>}
+              searchParams={
+                props.searchParams as Promise<Record<string, string>>
+              }
             />
           </Suspense>
         </div>
 
-        <Suspense fallback={<aside className="hidden lg:block lg:w-48 shrink-0"><div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4 h-48 animate-pulse" /></aside>}>
+        <Suspense
+          fallback={
+            <aside className="hidden lg:block lg:w-48 shrink-0">
+              <div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4 h-48 animate-pulse" />
+            </aside>
+          }
+        >
           <TriageSidebar
             searchParams={props.searchParams as Promise<Record<string, string>>}
           />
         </Suspense>
       </div>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-32 bg-linear-to-t from-background to-transparent pointer-events-none z-10" />
 
-      <Suspense fallback={
-        <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background border border-border rounded-2xl shadow-lg">
-          <div className="flex items-center gap-2 px-3 py-3">
-            <div className="flex-1 h-8 rounded-lg bg-surface animate-pulse" />
-            <div className="w-32 h-8 rounded-lg bg-surface animate-pulse" />
-            <div className="w-8 h-8 rounded-full bg-surface animate-pulse shrink-0" />
+      <Suspense
+        fallback={
+          <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background border border-border rounded-2xl shadow-lg">
+            <div className="flex items-center gap-2 px-3 py-3">
+              <div className="flex-1 h-8 rounded-lg bg-surface animate-pulse" />
+              <div className="w-32 h-8 rounded-lg bg-surface animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-surface animate-pulse shrink-0" />
+            </div>
           </div>
-        </div>
-      }>
+        }
+      >
         <MobileFiltersWrapper />
       </Suspense>
     </>
@@ -265,7 +293,10 @@ async function Filters({
 }) {
   const [sp, physicianRows] = await Promise.all([
     searchParams,
-    db.select({ id: physicians.id, name: physicians.name }).from(physicians).orderBy(physicians.name),
+    db
+      .select({ id: physicians.id, name: physicians.name })
+      .from(physicians)
+      .orderBy(physicians.name),
   ]);
 
   const currentStatus = sp.status ?? "";
@@ -289,7 +320,10 @@ async function Filters({
             </a>
           ))}
         </div>
-        <PhysicianSelect physicians={physicianRows} current={currentPhysician} />
+        <PhysicianSelect
+          physicians={physicianRows}
+          current={currentPhysician}
+        />
       </div>
     </div>
   );
@@ -298,8 +332,18 @@ async function Filters({
 async function MobileFiltersWrapper() {
   const [aiEnabled, physicianRows] = await Promise.all([
     getAiEnabled(),
-    db.select({ id: physicians.id, name: physicians.name }).from(physicians).orderBy(physicians.name),
+    db
+      .select({ id: physicians.id, name: physicians.name })
+      .from(physicians)
+      .orderBy(physicians.name),
   ]);
 
-  return <MobileFilterBar physicians={physicianRows} aiEnabled={aiEnabled} toggleAction={toggleAi} />;
+  return (
+    <MobileFilterBar
+      key={String(aiEnabled)}
+      physicians={physicianRows}
+      aiEnabled={aiEnabled}
+      toggleAction={toggleAi}
+    />
+  );
 }

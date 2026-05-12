@@ -35,3 +35,7 @@ body {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 1; }
 }
+
+@theme inline {
+  --animate-orb-pulse: orb-pulse 2s ease-in-out infinite;
+}

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import TriageIcon from "./TriageIcon";
-import type { TriageLevel } from "@/lib/db/schema";
-import { triageLabel, triageColor, triageStyles, TRIAGE_LEVELS_ORDERED } from "@/lib/utils";
+import {
+  triageLabel,
+  triageColor,
+  triageStyles,
+  TRIAGE_LEVELS_ORDERED,
+} from "@/lib/utils";
 
 type Physician = { id: string; name: string };
 
@@ -21,35 +25,43 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Canc",
 };
 
-export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }: Props) {
+export default function MobileFilterBar({
+  physicians,
+  aiEnabled,
+  toggleAction,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [triageOpen, setTriageOpen] = useState(false);
   const [optimisticEnabled, setOptimisticEnabled] = useState(aiEnabled);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    setOptimisticEnabled(aiEnabled);
-  }, [aiEnabled]);
-
-  const currentStatus   = searchParams.get("status") ?? "";
+  const currentStatus = searchParams.get("status") ?? "";
   const currentPhysician = searchParams.get("physician") ?? "";
-  const currentTriage   = searchParams.get("triage") ?? "";
+  const currentTriage = searchParams.get("triage") ?? "";
 
   function update(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) { params.set(key, value); } else { params.delete(key); }
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
     const qs = params.toString();
     router.push(qs ? `/admin?${qs}` : "/admin");
     setTriageOpen(false);
   }
 
-  const activeTriageLevel = TRIAGE_LEVELS_ORDERED.find((t) => t === currentTriage) ?? null;
+  const activeTriageLevel =
+    TRIAGE_LEVELS_ORDERED.find((t) => t === currentTriage) ?? null;
 
   return (
     <>
       {triageOpen && (
-        <div className="lg:hidden fixed inset-0 z-10" onClick={() => setTriageOpen(false)} />
+        <div
+          className="lg:hidden fixed inset-0 z-10"
+          onClick={() => setTriageOpen(false)}
+        />
       )}
 
       <div className="lg:hidden fixed bottom-4 left-2 right-2 z-20 bg-background border border-border rounded-2xl shadow-lg">
@@ -59,7 +71,9 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
             <button
               onClick={() => update("triage", "")}
               className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                currentTriage === "" ? "bg-brand/10 text-brand font-medium" : "text-muted hover:text-foreground hover:bg-surface"
+                currentTriage === ""
+                  ? "bg-brand/10 text-brand font-medium"
+                  : "text-muted hover:text-foreground hover:bg-surface"
               }`}
             >
               All triage
@@ -71,7 +85,9 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
                   key={t}
                   onClick={() => update("triage", t)}
                   className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                    active ? `${triageStyles(t)} font-medium` : "text-muted hover:text-foreground hover:bg-surface"
+                    active
+                      ? `${triageStyles(t)} font-medium`
+                      : "text-muted hover:text-foreground hover:bg-surface"
                   }`}
                 >
                   <span className={active ? "" : triageColor(t)}>
@@ -86,7 +102,9 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
                 onClick={() => {
                   setOptimisticEnabled(false);
                   setTriageOpen(false);
-                  startTransition(async () => { await toggleAction(); });
+                  startTransition(async () => {
+                    await toggleAction();
+                  });
                 }}
                 className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-muted hover:text-foreground hover:bg-surface transition-colors"
               >
@@ -116,7 +134,9 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
                 }`}
               >
                 <span className="xs:hidden">{STATUS_LABELS[s]}</span>
-                <span className="hidden xs:inline">{s.charAt(0).toUpperCase() + s.slice(1)}</span>
+                <span className="hidden xs:inline">
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </span>
               </button>
             ))}
           </div>
@@ -129,7 +149,9 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
           >
             <option value="">All doctors</option>
             {physicians.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
             ))}
           </select>
 
@@ -138,19 +160,23 @@ export default function MobileFilterBar({ physicians, aiEnabled, toggleAction }:
             onClick={() => {
               if (!optimisticEnabled) {
                 setOptimisticEnabled(true);
-                startTransition(async () => { await toggleAction(); });
+                startTransition(async () => {
+                  await toggleAction();
+                });
               } else {
                 setTriageOpen((o) => !o);
               }
             }}
             disabled={pending}
             className={`relative w-8 h-8 rounded-full shrink-0 flex items-center justify-center transition-opacity ${pending ? "opacity-50" : ""}`}
-            aria-label={optimisticEnabled ? "AI triage filter" : "Enable AI triage"}
+            aria-label={
+              optimisticEnabled ? "AI triage filter" : "Enable AI triage"
+            }
           >
             {optimisticEnabled ? (
               <>
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-blue-400 blur-[2px] [animation:orb-pulse_2s_ease-in-out_infinite]" />
-                <div className="absolute inset-0.5 rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-blue-500" />
+                <div className="absolute inset-0 rounded-full bg-linear-to-br from-pink-400 via-purple-400 to-blue-400 blur-[2px] animate-orb-pulse" />
+                <div className="absolute inset-0.5 rounded-full bg-linear-to-br from-pink-400 via-purple-400 to-blue-500" />
                 {activeTriageLevel && (
                   <span className="relative z-10 text-white">
                     <TriageIcon level={activeTriageLevel} size={12} />
