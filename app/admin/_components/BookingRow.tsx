@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
 import { statusStyles, triageStyles, triageLabel, triageBorder } from "@/lib/utils";
 import TriageIcon from "./TriageIcon";
@@ -39,37 +39,6 @@ function DetailField({ label, value }: { label: string; value: string }) {
 
 export default function BookingRow({ booking, updateStatusAction, aiEnabled }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const fetchedRef = useRef(false);
-
-  useEffect(() => {
-    if (!expanded || !aiEnabled || fetchedRef.current) return;
-    fetchedRef.current = true;
-    setSummaryLoading(true);
-
-    fetch("/api/admin/summary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        reason: booking.reason,
-        notes: booking.notes,
-        specialty: booking.specialty,
-      }),
-    }).then(async (res) => {
-      if (!res.ok || !res.body) { setSummaryLoading(false); return; }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-        setSummary(accumulated);
-      }
-      setSummaryLoading(false);
-    }).catch(() => setSummaryLoading(false));
-  }, [expanded, aiEnabled, booking.reason, booking.notes, booking.specialty]);
 
   const apptDate = new Date(booking.startsAt);
   const apptDateStr = apptDate.toLocaleDateString("en-CA", {
@@ -146,19 +115,6 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
 
       {expanded && (
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm bg-surface rounded-xl px-4 py-4 border border-border">
-          {aiEnabled && (summary || summaryLoading) && (
-            <div className="col-span-2 sm:col-span-3 pb-3 border-b border-border">
-              <p className="text-xs text-muted uppercase tracking-wide mb-1">
-                Clinical summary
-                <span className="ml-1.5 text-xs normal-case tracking-normal text-muted/60">AI suggestion (not reviewed by a clinician)</span>
-              </p>
-              <p className="text-foreground leading-relaxed">
-                {summaryLoading && !summary
-                  ? <span className="inline-block w-32 h-3.5 rounded bg-border animate-pulse" />
-                  : summary}
-              </p>
-            </div>
-          )}
           <DetailField label="Email" value={booking.email} />
           <DetailField label="Phone" value={booking.phone} />
           <DetailField label="Date of birth" value={booking.dob} />

@@ -156,7 +156,6 @@ app/
 │   └── page.tsx            ← booking confirmed (reference #)
 ├── api/
 │   └── admin/
-│       └── summary/        ← (Phase 4.5) streaming clinical summary
 │           └── route.ts
 └── admin/
     ├── page.tsx            ← booking management dashboard
@@ -320,7 +319,7 @@ Phases:
 2. Patient flow read paths
 3. Booking action + confirmation
 4. Admin (proxy.ts gate, dashboard, inline actions)
-4.5. AI features (triage classification + streaming summary)
+4.5. AI features (triage classification)
 5. UX polish (framer-motion, lenis)
 6. README
 
@@ -331,7 +330,7 @@ Pause for sign-off between phases.
 ## AI Features (Phase 4.5)
 
 ### Overview
-Two AI features targeting the clinician (the actual buyer), powered by Gemma 4 (`gemma4:31b`) via Ollama Cloud (`https://ollama.com`). Uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with Ollama's OpenAI-compatible endpoint (`https://ollama.com/v1`).
+One AI feature targeting the clinician (the actual buyer): triage classification. Powered by Gemma 4 (`gemma4:31b`) via Ollama Cloud (`https://ollama.com`). Uses the Vercel AI SDK (`ai` + `@ai-sdk/openai`) with Ollama's OpenAI-compatible endpoint (`https://ollama.com/v1`).
 
 ### Feature toggle
 Stored in a `settings` DB table (`ai_enabled: boolean`), seeded from the `AI_ENABLED` env var on first run. Admin panel has a toggle switch that calls a server action to flip it live — no redeploy needed. All AI code paths check this first and degrade gracefully.
@@ -385,27 +384,6 @@ Reason for visit: {reason}
 Additional notes: {notes ?? "None"}
 ```
 
-**Clinical summary system prompt:**
-```
-You are a clinical documentation assistant for an outpatient physician in Toronto, Canada. Write one sentence summarising a patient's appointment request in plain clinical language a physician would read when scanning their day's bookings.
-
-Rules:
-- One sentence only, maximum 25 words
-- Plain clinical language — no jargon, no diagnosis
-- Third person: begin with "Patient presents with", "Patient requesting", or "Patient reports"
-- Do not include the patient's name
-- Do not add information not stated in the patient's text
-- Do not make a diagnosis or suggest treatment
-- End with a period
-```
-
-**Summary user message:**
-```
-Physician specialty: {specialty}
-Reason for visit: {reason}
-Additional notes: {notes ?? "None"}
-```
-
 ### Triage classification
 - Runs via Next.js `after()` in `createBooking` — fires after the patient's redirect, zero impact on booking UX
 - Four-tier system based on Canadian outpatient clinical literature (no single national standard exists — this aligns with published McMaster/Ontario practice):
@@ -426,13 +404,6 @@ Additional notes: {notes ?? "None"}
 - Required disclaimer on booking confirmation: "If you believe you are experiencing a medical emergency, call 911 or go to your nearest emergency department."
 - Required disclaimer on admin dashboard: "Urgency suggestions are generated automatically from patient-reported reason for visit and have not been reviewed by a clinician."
 - Safety flag is a hard-coded non-AI keyword screen — not a medical device
-
-### Streaming clinical summary
-- Triggered when a doctor opens the details panel
-- Route Handler at `/api/admin/summary` — must manually verify `admin_session` cookie (proxy only covers page routes)
-- Streams via Vercel AI SDK `streamText` → `toTextStreamResponse()`
-- Client reads stream with `useEffect` + `ReadableStream`
-- Shown inside the expanded details panel as the doctor reads it
 
 ### Environment variables
 ```
@@ -458,7 +429,7 @@ const model = ollama(process.env.OLLAMA_MODEL ?? "gemma4:31b");
 - `settings` table: `id`, `aiEnabled` (boolean, default false)
 
 ### Key decisions
-- **AI features are fully optional** — the entire app works without them. No `OLLAMA_API_KEY` = AI disabled, no errors, no broken UI. Everything degrades gracefully: null triage level shows no badge, no summary shown.
+- **AI features are fully optional** — the entire app works without them. No `OLLAMA_API_KEY` = AI disabled, no errors, no broken UI. Everything degrades gracefully: null triage level shows no badge.
 - `after()` over synchronous classification — patient UX must not be affected by AI latency
 - Nullable `triageLevel` — schema never breaks when AI is off or fails
 - DB-stored toggle over env var — can be flipped live in the admin panel without redeployment
@@ -479,3 +450,4 @@ const model = ollama(process.env.OLLAMA_MODEL ?? "gemma4:31b");
 - Real-time admin updates: current polling (`router.refresh()` every 10s) is acceptable for low-traffic clinics. Production path is Postgres `LISTEN/NOTIFY` with the WebSocket Pool driver + SSE, but Vercel serverless function timeouts kill the persistent connection — requires a long-lived Node.js server or managed pub/sub (Ably, Pusher)
 - Physician self-service portal (`/physician`): physicians manage their own slot availability — add ad-hoc slots, block time off. Needs its own auth layer (physician ID + PIN or magic link) scoped so a physician can only modify their own slots. Key constraints: cannot remove a slot with a confirmed booking against it; recurring availability templates ("Mon/Wed 9am–1pm") would be more practical than slot-by-slot management. Data layer (`time_slots.physician_id`, `time_slots.available`) already supports this without schema changes.
 - Admin/physician filtering: `?physician=<id>` and `?triage=<level>` search params on `/admin`, with triage filter row conditionally shown when AI is enabled.
+- Streaming clinical summary in admin booking details: on-demand AI-generated one-sentence summary of the patient's reason for visit, streamed via Vercel AI SDK `streamText` into the expanded row. Descoped — triage badge already surfaces the actionable signal; the summary is redundant for low-volume clinical use.
