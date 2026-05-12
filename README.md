@@ -34,21 +34,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## What I Built
 
-##### Patient Portal
-Three steps: Choose a physician, pick a time slot, fill in your details.
-
-![Patient flow](https://github.com/user-attachments/assets/...)
+#### Patient Portal
+Three steps: Choose a physician -> Pick a time slot -> Fill in your details.
+<img width="980" height="114" alt="Image" src="https://github.com/user-attachments/assets/ef7e7ffc-22b7-4cc3-a37b-928c1989c29b" />
 
 Slots are claimed atomically on submit. If a slot is taken between selecting it and submitting, the patient gets a clear message and is sent back to pick another time.
 
-![Slot picker](https://github.com/user-attachments/assets/...)
+<img width="1772" height="764" alt="Image" src="https://github.com/user-attachments/assets/18c91fff-a4a4-4598-9702-a2a7a9ad8463" />
 
-##### Admin Dashboard
+#### Admin Dashboard
 The dashboard shows all bookings with inline confirm and cancel buttons. Rows can be clicked to expand to show full patient detail. Filters by status and physician are in the URL so views are shareable.
 
 On mobile browsers, filters collapse into a floating bar at the bottom of the screen.
 
-##### Lightweight DB Integration
+#### Lightweight DB Integration
 Database is built around four tables.
 
 `physicians` is seeded and read-only.
@@ -59,7 +58,7 @@ Database is built around four tables.
 
 `settings` is a single-row table that holds the AI toggle so it persists across deploys. Physicians and slots are read with a cache, bookings and settings are always fresh.
 
-##### AI Triage
+### AI Triage
 
 This optional feature classifies the patient's reason for visit in the background after a booking is submitted. It assigns one of four urgency levels: urgent, soon, routine, or administrative.
 
@@ -72,7 +71,7 @@ The four-tier scale was designed against Canadian clinical literature. I couldn'
 <details>
 <summary>System Prompt Used</summary>
 
-![System prompt](https://github.com/user-attachments/assets/...)
+<img width="2048" height="1594" alt="Image" src="https://github.com/user-attachments/assets/94709623-ca24-4bbd-b8c7-829e472fe81f" />
 
 </details>
 
