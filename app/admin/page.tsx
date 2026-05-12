@@ -98,9 +98,9 @@ async function BookingsTable({
   );
 }
 
-async function AdminHeader() {
+function AdminHeader() {
   return (
-    <div className="flex items-center justify-between pt-5 pb-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-5 pb-3">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Bookings</h1>
         <p className="text-muted text-sm mt-0.5">Manage patient appointments</p>
@@ -129,8 +129,8 @@ async function TriageSidebar({
   const currentTriage = sp.triage ?? "";
 
   return (
-    <aside className="w-48 shrink-0">
-      <div className="sticky top-40 bg-surface rounded-xl border border-border p-4">
+    <aside className="w-full lg:w-48 shrink-0">
+      <div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4">
         <div className="mb-3">
           <AiToggle enabled={aiEnabled} toggleAction={toggleAi} />
         </div>
@@ -215,7 +215,7 @@ export default function AdminPage(props: PageProps<"/admin">) {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full px-4 pt-40 pb-12 flex gap-6">
+      <div className="max-w-5xl mx-auto w-full px-4 pt-40 pb-12 flex flex-col lg:flex-row gap-6">
         <div className="flex-1 min-w-0">
           <Suspense
             fallback={
@@ -232,7 +232,7 @@ export default function AdminPage(props: PageProps<"/admin">) {
           </Suspense>
         </div>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<aside className="w-full lg:w-48 shrink-0"><div className="lg:sticky lg:top-40 bg-surface rounded-xl border border-border p-4 h-48 animate-pulse" /></aside>}>
           <TriageSidebar
             searchParams={props.searchParams as Promise<Record<string, string>>}
           />
@@ -257,7 +257,7 @@ async function Filters({
 
   return (
     <div className="pb-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2 flex-wrap">
           {(["", ...STATUSES] as const).map((s) => (
             <a

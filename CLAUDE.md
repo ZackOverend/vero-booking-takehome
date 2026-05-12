@@ -157,7 +157,7 @@ app/
 └── admin/
     ├── page.tsx            ← booking management dashboard
     ├── login/page.tsx
-    └── _components/        ← BookingRow, AiToggle, TriageIcon, PhysicianSelect
+    └── _components/        ← BookingRow, AiToggle, TriageIcon, PhysicianSelect, RefreshButton
 proxy.ts                    ← admin auth gate (/admin/:path* except /admin/login)
 ```
 
@@ -225,9 +225,13 @@ Step state is passed forward via URL search params or hidden form inputs, not `l
 
 ## Admin Flow
 
-`/admin` — single page, server-rendered table of all bookings.
+`/admin` — two-column layout: bookings list (left, `flex-1`) + AI triage sidebar (right, `w-48`, sticky).
 
-- Filter by status (`pending` / `confirmed` / `cancelled`), physician, and AI triage level via URL search params (`?status=`, `?physician=<id>`, `?triage=<level>`). Triage filter only shown when AI is enabled.
+- **Fixed header** — title, Refresh button, Sign out. Status filter pills + physician dropdown below in the same fixed bar.
+- **Status filter** — `?status=` URL param, pill tabs (All / Pending / Confirmed / Cancelled)
+- **Physician filter** — `?physician=<id>` URL param, dropdown select in the header bar
+- **AI triage sidebar** — always visible. `AiToggle` (orb indicator) at top toggles AI features. When enabled: triage filter nav (`?triage=<level>`) + disclaimer. When disabled: prompt to enable.
+- Triage filter is ignored in DB queries when AI is disabled — prevents stale `?triage=` params filtering results.
 - Confirm/cancel inline via Server Functions bound to form `action`
 - Click any row (or chevron) to expand full patient detail. `select-none` on row prevents text highlight; expanded panel restores `select-text`.
 
