@@ -70,7 +70,7 @@ async function DetailsContent({
         Complete the form below to confirm your appointment.
       </p>
       <DetailsForm
-        key={crypto.randomUUID()}
+        key={slotId}
         slotId={slotId}
         slotLabel={slotLabel}
         physicianName={physician.name}
@@ -81,7 +81,7 @@ async function DetailsContent({
   );
 }
 
-function Detailsskeleton() {
+function DetailsSkeleton() {
   return (
     <div className="flex flex-col gap-5 mt-14">
       <div className="h-14 rounded-xl bg-surface animate-pulse" />
@@ -103,7 +103,7 @@ export default function DetailsPage(
   return (
     <main>
       <StepIndicator current={3} />
-      <Suspense fallback={<Detailsskeleton />}>
+      <Suspense fallback={<DetailsSkeleton />}>
         <DetailsContent
           params={props.params as Promise<{ physicianId: string }>}
           searchParams={props.searchParams as Promise<Record<string, string>>}

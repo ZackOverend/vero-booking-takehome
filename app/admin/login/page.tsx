@@ -28,6 +28,7 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               autoFocus
+              required
               className="rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
             />
           </div>

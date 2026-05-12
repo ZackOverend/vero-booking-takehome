@@ -238,8 +238,8 @@ Step state is passed forward via URL search params or hidden form inputs, not `l
 ### Mobile layout (`< lg`)
 - Fixed header shows title + Refresh + Sign out only (no filter row)
 - Single column layout — sidebar hidden
-- `MobileFilterBar` (client component): floating frosted-glass pill pinned to bottom (`bottom-4 left-2 right-2`), contains status segmented tabs + physician dropdown + AI orb
-- AI orb: gradient when enabled (tap opens triage picker popover), grey when disabled (tap enables AI). `useTransition` for pending state. Syncs with desktop via `useEffect` on `aiEnabled` prop.
+- `MobileFilterBar` (client component): floating pill pinned to bottom (`bottom-4 left-2 right-2`), contains status segmented tabs + physician dropdown + AI orb
+- AI orb: gradient when enabled (tap opens triage picker popover), grey when disabled (tap enables AI). `useTransition` for pending state. `key={String(aiEnabled)}` causes remount when server re-renders with new AI state — avoids `useEffect` setState anti-pattern.
 - Status labels abbreviate below `xs` (480px): Pend / Conf / Canc
 - Bottom gradient fade (`h-32 bg-gradient-to-t`) behind the bar for visual separation
 

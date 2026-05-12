@@ -24,6 +24,7 @@ const EMERGENCY_KEYWORDS = [
   "allergic reaction",
 ];
 
+// safety_flag is intentionally excluded, it is set by the keyword gate above, never by the AI
 const VALID_LEVELS = new Set(["urgent", "soon", "routine", "administrative"]);
 
 const SYSTEM_PROMPT = `You are a medical booking assistant for an outpatient clinic in Toronto, Canada. Classify the urgency of a patient's appointment request based on their stated reason for visit.
@@ -55,7 +56,7 @@ export function isSafetyFlag(text: string): boolean {
 
 export async function classifyTriage(
   reason: string,
-  notes: string | null
+  notes: string | null,
 ): Promise<TriageLevel | null> {
   if (isSafetyFlag(reason) || isSafetyFlag(notes ?? "")) {
     return "safety_flag";

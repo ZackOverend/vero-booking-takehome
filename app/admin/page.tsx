@@ -7,6 +7,7 @@ import { triageLevelEnum } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
 import { logout } from "@/lib/actions/auth";
 import { getAiEnabled, toggleAi } from "@/lib/actions/settings";
+import { getPhysicians } from "@/lib/actions/physicians";
 import {
   triageLabel,
   triageColor,
@@ -293,10 +294,7 @@ async function Filters({
 }) {
   const [sp, physicianRows] = await Promise.all([
     searchParams,
-    db
-      .select({ id: physicians.id, name: physicians.name })
-      .from(physicians)
-      .orderBy(physicians.name),
+    getPhysicians(),
   ]);
 
   const currentStatus = sp.status ?? "";
@@ -332,10 +330,7 @@ async function Filters({
 async function MobileFiltersWrapper() {
   const [aiEnabled, physicianRows] = await Promise.all([
     getAiEnabled(),
-    db
-      .select({ id: physicians.id, name: physicians.name })
-      .from(physicians)
-      .orderBy(physicians.name),
+    getPhysicians(),
   ]);
 
   return (
