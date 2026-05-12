@@ -28,7 +28,7 @@ export default function AiToggle({
     >
       <div className="relative w-2.5 h-2.5 shrink-0">
         {optimisticEnabled ? (
-          <div className="w-2.5 h-2.5 rounded-full bg-linear-t-to-br from-pink-400 via-purple-400 to-blue-400 blur-[2px] animate-orb-pulse" />
+          <div className="w-2.5 h-2.5 rounded-full bg-linear-to-br from-pink-400 via-purple-400 to-blue-400 blur-[2px] animate-orb-pulse" />
         ) : (
           <div className="w-2.5 h-2.5 rounded-full bg-border" />
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
 import { statusStyles, triageColor, triageBorder } from "@/lib/utils";
 import TriageIcon from "./TriageIcon";
@@ -39,6 +39,7 @@ function DetailField({ label, value }: { label: string; value: string }) {
 
 export default function BookingRow({ booking, updateStatusAction, aiEnabled }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [selectPending, startSelectTransition] = useTransition();
 
   const apptDate = new Date(booking.startsAt);
   const apptDateStr = apptDate.toLocaleDateString("en-CA", {
@@ -144,8 +145,12 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
             <p className="text-xs text-muted uppercase tracking-wide mb-1.5">Override status</p>
             <select
               value={booking.status}
-              onChange={(e) => updateStatusAction(booking.id, e.target.value as BookingStatus)}
-              className="text-xs font-medium px-2 py-1.5 rounded-lg border border-border bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+              disabled={selectPending}
+              onChange={(e) => {
+                const status = e.target.value as BookingStatus;
+                startSelectTransition(() => updateStatusAction(booking.id, status));
+              }}
+              className={`text-xs font-medium px-2 py-1.5 rounded-lg border border-border bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors ${selectPending ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>

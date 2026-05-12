@@ -106,6 +106,10 @@ async function ConfirmationContent({
         </div>
       </div>
 
+      <p className="text-xs text-muted mb-8 leading-relaxed">
+        If you believe you are experiencing a medical emergency, call 911 or go to your nearest emergency department.
+      </p>
+
       <Link
         href="/book"
         className="text-sm text-brand hover:text-brand-hover underline"
