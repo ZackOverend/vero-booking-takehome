@@ -23,7 +23,7 @@ export default function AiToggle({
     <button
       onClick={handleToggle}
       disabled={pending}
-      className={`flex items-center gap-2 w-full group transition-opacity ${pending ? "opacity-50" : ""}`}
+      className={`flex items-center gap-2 w-full group transition-opacity cursor-pointer disabled:cursor-not-allowed ${pending ? "opacity-50" : ""}`}
       aria-label={optimisticEnabled ? "Disable AI triage" : "Enable AI triage"}
     >
       <div className="relative w-2.5 h-2.5 shrink-0">

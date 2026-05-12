@@ -2,13 +2,19 @@
 
 import { useActionState } from "react";
 import { login } from "@/lib/actions/auth";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface px-8 py-10 shadow-sm">
+        <div className="flex justify-end -mt-4 -mr-2 mb-4">
+          <Link href="/book" className="text-sm text-muted hover:text-foreground transition-colors">
+            Patient View
+          </Link>
+        </div>
         <h1 className="text-2xl font-semibold text-foreground mb-1">Admin</h1>
         <p className="text-muted text-sm mb-8">Sign in to manage bookings.</p>
 

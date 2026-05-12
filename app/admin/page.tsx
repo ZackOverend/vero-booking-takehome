@@ -1,7 +1,8 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { bookings, timeSlots, physicians } from "@/lib/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import type { BookingStatus, TriageLevel } from "@/lib/db/schema";
 import { triageLevelEnum } from "@/lib/db/schema";
 import { updateBookingStatus } from "@/lib/actions/bookings";
@@ -35,6 +36,24 @@ function filterHref(sp: Record<string, string>, key: string, value: string) {
   return qs ? `/admin?${qs}` : "/admin";
 }
 
+function toggleStatusHref(sp: Record<string, string>, status: BookingStatus): string {
+  const params = new URLSearchParams(sp);
+  const current = sp.status ? sp.status.split(",").filter(Boolean) : [];
+  const idx = current.indexOf(status);
+  if (idx === -1) {
+    current.push(status);
+  } else {
+    current.splice(idx, 1);
+  }
+  if (current.length === 0 || current.length === STATUSES.length) {
+    params.delete("status");
+  } else {
+    params.set("status", current.join(","));
+  }
+  const qs = params.toString();
+  return qs ? `/admin?${qs}` : "/admin";
+}
+
 async function BookingsTable({
   searchParams,
 }: {
@@ -42,9 +61,9 @@ async function BookingsTable({
 }) {
   const [sp, aiEnabled] = await Promise.all([searchParams, getAiEnabled()]);
 
-  const statusFilter = STATUSES.includes(sp.status as BookingStatus)
-    ? (sp.status as BookingStatus)
-    : null;
+  const statusFilter = sp.status
+    ? sp.status.split(",").filter((s): s is BookingStatus => STATUSES.includes(s as BookingStatus))
+    : [];
   const triageFilter =
     aiEnabled && TRIAGE_LEVELS.includes(sp.triage as TriageLevel)
       ? (sp.triage as TriageLevel)
@@ -73,14 +92,14 @@ async function BookingsTable({
     .innerJoin(physicians, eq(timeSlots.physicianId, physicians.id))
     .where(
       and(
-        statusFilter ? eq(bookings.status, statusFilter) : undefined,
+        statusFilter.length > 0 ? inArray(bookings.status, statusFilter) : undefined,
         triageFilter ? eq(bookings.triageLevel, triageFilter) : undefined,
         physicianFilter ? eq(physicians.id, physicianFilter) : undefined,
       ),
     )
     .orderBy(desc(bookings.createdAt));
 
-  const hasFilters = !!(statusFilter || triageFilter || physicianFilter);
+  const hasFilters = !!(statusFilter.length > 0 || triageFilter || physicianFilter);
 
   return (
     <div className="w-full rounded-xl border border-border">
@@ -113,10 +132,13 @@ function AdminHeader() {
       </div>
       <div className="flex items-center gap-4">
         <RefreshButton />
+        <Link href="/book" className="text-sm text-muted hover:text-foreground transition-colors">
+          Patient View
+        </Link>
         <form action={logout}>
           <button
             type="submit"
-            className="text-sm text-muted hover:text-foreground transition-colors"
+            className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer"
           >
             Sign out
           </button>
@@ -297,26 +319,34 @@ async function Filters({
     getPhysicians(),
   ]);
 
-  const currentStatus = sp.status ?? "";
+  const activeStatuses = sp.status ? sp.status.split(",").filter(Boolean) : [];
   const currentPhysician = sp.physician ?? "";
 
   return (
     <div className="pb-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2 flex-wrap">
-          {(["", ...STATUSES] as const).map((s) => (
+          {STATUSES.map((s) => (
             <a
               key={s}
-              href={filterHref(sp, "status", s)}
+              href={toggleStatusHref(sp, s)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-center min-w-24 ${
-                currentStatus === s
+                activeStatuses.includes(s)
                   ? "bg-brand text-brand-fg border border-transparent"
                   : "bg-surface border border-border text-muted hover:text-foreground hover:border-brand"
               }`}
             >
-              {s === "" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s.charAt(0).toUpperCase() + s.slice(1)}
             </a>
           ))}
+          {(activeStatuses.length > 0 || currentPhysician) && (
+            <a
+              href="/admin"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-center text-muted hover:text-foreground"
+            >
+              Clear
+            </a>
+          )}
         </div>
         <PhysicianSelect
           physicians={physicianRows}

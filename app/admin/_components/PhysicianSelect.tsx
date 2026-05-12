@@ -26,7 +26,7 @@ export default function PhysicianSelect({ physicians, current }: Props) {
     <select
       value={current}
       onChange={handleChange}
-      className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border bg-surface text-muted hover:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+      className="px-3 py-2 rounded-lg text-sm border border-border bg-white text-foreground hover:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors cursor-pointer"
     >
       <option value="">All doctors</option>
       {physicians.map((p) => (

@@ -36,7 +36,7 @@ export default function MobileFilterBar({
   const [optimisticEnabled, setOptimisticEnabled] = useState(aiEnabled);
   const [pending, startTransition] = useTransition();
 
-  const currentStatus = searchParams.get("status") ?? "";
+  const activeStatuses = (searchParams.get("status") ?? "").split(",").filter(Boolean);
   const currentPhysician = searchParams.get("physician") ?? "";
   const currentTriage = searchParams.get("triage") ?? "";
 
@@ -50,6 +50,24 @@ export default function MobileFilterBar({
     const qs = params.toString();
     router.push(qs ? `/admin?${qs}` : "/admin");
     setTriageOpen(false);
+  }
+
+  function toggleStatus(status: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    const idx = activeStatuses.indexOf(status);
+    const next = [...activeStatuses];
+    if (idx === -1) {
+      next.push(status);
+    } else {
+      next.splice(idx, 1);
+    }
+    if (next.length === 0 || next.length === STATUSES.length) {
+      params.delete("status");
+    } else {
+      params.set("status", next.join(","));
+    }
+    const qs = params.toString();
+    router.push(qs ? `/admin?${qs}` : "/admin");
   }
 
   const activeTriageLevel =
@@ -117,20 +135,12 @@ export default function MobileFilterBar({
         <div className="flex items-center gap-2 px-3 py-3">
           {/* Status segmented tabs */}
           <div className="flex flex-1 items-center bg-surface border border-border rounded-lg p-0.5">
-            <button
-              onClick={() => update("status", "")}
-              className={`flex-1 text-center text-xs font-medium py-1 rounded-md transition-colors ${
-                currentStatus === "" ? "bg-brand text-brand-fg" : "text-muted"
-              }`}
-            >
-              All
-            </button>
             {STATUSES.map((s) => (
               <button
                 key={s}
-                onClick={() => update("status", s)}
+                onClick={() => toggleStatus(s)}
                 className={`flex-1 text-center text-xs font-medium py-1 rounded-md transition-colors ${
-                  currentStatus === s ? "bg-brand text-brand-fg" : "text-muted"
+                  activeStatuses.includes(s) ? "bg-brand text-brand-fg" : "text-muted"
                 }`}
               >
                 <span className="xs:hidden">{STATUS_LABELS[s]}</span>

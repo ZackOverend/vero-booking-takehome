@@ -7,7 +7,14 @@ export default async function BookPage() {
 
   return (
     <main>
-      <StepIndicator current={1} />
+      <div className="flex items-center justify-between mb-10">
+        <div className="[&>div]:mb-0">
+          <StepIndicator current={1} />
+        </div>
+        <Link href="/admin" className="text-sm text-muted hover:text-foreground transition-colors shrink-0">
+          Admin Console
+        </Link>
+      </div>
       <h1 className="text-2xl font-semibold text-foreground mb-1">
         Choose a physician
       </h1>

@@ -15,7 +15,7 @@ export default function RefreshButton() {
     <button
       onClick={handleRefresh}
       disabled={pending}
-      className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors disabled:opacity-50"
+      className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
