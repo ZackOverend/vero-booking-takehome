@@ -95,6 +95,14 @@ export default function DetailsForm({
   const set = (name: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setFields((f) => ({ ...f, [name]: e.target.value }));
 
+  function formatPhone(value: string): string {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+    if (digits.length === 0) return "";
+    if (digits.length <= 3) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div className="rounded-xl border border-border bg-surface px-4 py-3 text-sm">
@@ -159,10 +167,10 @@ export default function DetailsForm({
               id={id("phone")}
               name="phone"
               type="tel"
-              placeholder="+1 (416) 555-0100"
+              placeholder="(416) 555-0100"
               autoComplete="tel"
               value={fields.phone}
-              onChange={set("phone")}
+              onChange={(e) => setFields((f) => ({ ...f, phone: formatPhone(e.target.value) }))}
               className={input}
             />
           </Field>
@@ -180,7 +188,7 @@ export default function DetailsForm({
                   key={s}
                   type="button"
                   onClick={() => setFields((f) => ({ ...f, reason: s }))}
-                  className="text-xs px-2.5 py-1 rounded-full border border-border bg-surface text-muted hover:border-brand hover:text-foreground transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-full border border-border bg-surface text-muted hover:border-brand hover:text-foreground cursor-pointer transition-colors"
                 >
                   {s}
                 </button>
