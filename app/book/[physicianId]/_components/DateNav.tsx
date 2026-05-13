@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 function formatDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -46,6 +47,12 @@ export default function DateNav({ physicianId }: { physicianId: string }) {
   const sp = useSearchParams();
   const today = stripTime(new Date());
   const selected = parseDate(sp.get("date"));
+
+  useEffect(() => {
+    if (!sp.get("date")) {
+      router.replace(`/book/${physicianId}?date=${formatDate(today)}`);
+    }
+  }, []);
 
   function navigate(delta: number) {
     const next = new Date(selected);
