@@ -15,7 +15,10 @@ import { classifyTriage } from "@/lib/ai/triage";
 const BookingSchema = z.object({
   slotId: z.string().uuid(),
   patientName: z.string().min(2, "Full name is required"),
-  dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Valid date of birth required"),
+  dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Valid date of birth required").refine(
+    (val) => new Date(val) <= new Date(),
+    "Date of birth cannot be in the future"
+  ),
   email: z.email("Valid email required"),
   phone: z.string().min(6, "Phone number is required"),
   reason: z.string().min(3, "Reason for visit is required"),

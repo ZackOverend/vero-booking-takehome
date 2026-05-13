@@ -84,6 +84,7 @@ async function ConfirmationContent({
                 month: "long",
                 day: "numeric",
                 year: "numeric",
+                timeZone: "America/Toronto",
               })}
             </p>
             <p className="text-sm text-muted">
@@ -91,6 +92,7 @@ async function ConfirmationContent({
                 hour: "numeric",
                 minute: "2-digit",
                 hour12: true,
+                timeZone: "America/Toronto",
               })}
             </p>
           </div>

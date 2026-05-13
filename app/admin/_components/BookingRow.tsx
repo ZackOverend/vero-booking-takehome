@@ -54,15 +54,18 @@ export default function BookingRow({ booking, updateStatusAction, aiEnabled }: P
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "America/Toronto",
   });
   const apptDateStrShort = apptDate.toLocaleDateString("en-CA", {
     month: "short",
     day: "numeric",
+    timeZone: "America/Toronto",
   });
   const apptTimeStr = apptDate.toLocaleTimeString("en-CA", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: "America/Toronto",
   });
   const bookedAtStr = new Date(booking.createdAt).toLocaleDateString("en-CA", {
     month: "short",

@@ -48,12 +48,14 @@ async function DetailsContent({
       weekday: "short",
       month: "short",
       day: "numeric",
+      timeZone: "America/Toronto",
     }) +
     " at " +
     slot.startsAt.toLocaleTimeString("en-CA", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
+      timeZone: "America/Toronto",
     });
 
   const backHref = dateParam

@@ -6,6 +6,7 @@ function formatTime(d: Date) {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: "America/Toronto",
   });
 }
 

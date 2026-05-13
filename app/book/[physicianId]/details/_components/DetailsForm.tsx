@@ -95,6 +95,11 @@ export default function DetailsForm({
   const set = (name: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setFields((f) => ({ ...f, [name]: e.target.value }));
 
+  function localDateStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
   function formatPhone(value: string): string {
     const digits = value.replace(/\D/g, "").slice(0, 10);
     if (digits.length === 0) return "";
@@ -143,6 +148,7 @@ export default function DetailsForm({
               id={id("dob")}
               name="dob"
               type="date"
+              max={localDateStr()}
               value={fields.dob}
               onChange={set("dob")}
               className={input}
