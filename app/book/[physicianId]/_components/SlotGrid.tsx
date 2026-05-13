@@ -1,13 +1,26 @@
 import Link from "next/link";
 import { getAvailableSlots } from "@/lib/actions/physicians";
 
+const TZ = "America/Toronto";
+
 function formatTime(d: Date) {
   return d.toLocaleTimeString("en-CA", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-    timeZone: "America/Toronto",
+    timeZone: TZ,
   });
+}
+
+function toDateParam(d: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
 export default async function SlotGrid({
@@ -32,7 +45,7 @@ export default async function SlotGrid({
       {slots.map((slot) => (
         <li key={slot.id}>
           <Link
-            href={`/book/${physicianId}/details?slotId=${slot.id}&date=${slot.startsAt.toISOString()}`}
+            href={`/book/${physicianId}/details?slotId=${slot.id}&date=${toDateParam(slot.startsAt)}`}
             className="block rounded-lg border border-border bg-surface text-center px-3 py-2.5 text-sm font-medium text-foreground hover:border-brand hover:bg-white hover:text-brand transition-colors"
           >
             {formatTime(slot.startsAt)}

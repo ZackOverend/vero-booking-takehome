@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 
 function formatDate(d: Date) {
-  return d.toISOString().split("T")[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function parseDate(s: string | null): Date {
